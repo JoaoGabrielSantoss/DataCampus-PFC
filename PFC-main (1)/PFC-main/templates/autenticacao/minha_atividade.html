@@ -1,0 +1,24 @@
+{% extends "painel.html" %}
+{% block title %}Minha atividade | DataCampus{% endblock %}
+{% block content %}
+<div class="painel-cabecalho">
+    <div>
+        <p class="painel-rotulo">Privacidade e transparência</p>
+        <h1 class="painel-titulo">Minha atividade</h1>
+    </div>
+</div>
+<p class="painel-abertura">Exibimos os 100 registros mais recentes da sua conta. A auditoria guarda horários, rotas, métodos, resultados HTTP e nomes dos campos alterados; não guarda senhas, conteúdo dos formulários, endereços IP ou valores dos dados.</p>
+<div class="painel-lista">
+    {% for evento in eventos %}
+        <div class="painel-linha">
+            <span class="painel-linha-texto">
+                <strong>{{ evento.get_tipo_display }}{% if evento.modelo_alvo %}: {{ evento.modelo_alvo }}{% endif %}</strong>
+                <span class="painel-linha-sub">{{ evento.criado_em|date:"d/m/Y H:i:s" }} · {{ evento.metodo }} {{ evento.rota }}{% if evento.status_http %} · HTTP {{ evento.status_http }}{% endif %}</span>
+                {% if evento.campos_alterados %}<span class="painel-linha-sub">Campos: {{ evento.campos_alterados|join:", " }}</span>{% endif %}
+            </span>
+        </div>
+    {% empty %}
+        <p class="painel-vazio">Ainda não há atividades registradas para sua conta.</p>
+    {% endfor %}
+</div>
+{% endblock %}

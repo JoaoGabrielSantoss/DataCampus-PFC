@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Termos de uso | DataCampus{% endblock %}
+{% block content %}
+<article class="container py-5" style="max-width: 900px">
+    <p class="painel-rotulo">DataCampus · versão {{ versao_termos }} · 15 de outubro de 2026</p>
+    <h1 class="h2 mb-4">Termos de uso</h1>
+    <p>Estes termos descrevem as regras para uso do DataCampus, sistema acadêmico de apoio à organização de estudos e critérios de elegibilidade.</p>
+
+    <h2 class="h5 mt-4">Acesso e conta</h2>
+    <ul>
+        <li>O cadastro é destinado a pessoas com email institucional <code>@alunos.umc.br</code>.</li>
+        <li>Informe dados corretos e mantenha suas credenciais em sigilo. As ações feitas pela sua conta podem aparecer no seu registro de atividade e na trilha de auditoria administrativa.</li>
+        <li>O perfil da conta determina as funcionalidades disponíveis. Não tente contornar controles de acesso ou acessar estudos de outras pessoas.</li>
+    </ul>
+
+    <h2 class="h5 mt-4">Uso permitido e responsabilidades</h2>
+    <p>Use o sistema somente para as atividades acadêmicas autorizadas e conforme as regras da instituição e da pesquisa aplicável. Não inclua dados de participantes, informações de saúde, senhas ou outros dados sensíveis em campos que não tenham sido projetados para isso. O sistema atual ainda não implementa o cadastro de voluntários nem a coleta de dados.</p>
+    <p>Os critérios cadastrados organizam a avaliação de estudos. Qualquer classificação ou sugestão produzida pelo sistema não substitui a análise e a decisão do pesquisador responsável.</p>
+
+    <h2 class="h5 mt-4">Disponibilidade, segurança e encerramento</h2>
+    <p>O serviço pode passar por manutenção ou indisponibilidade. A administração pode suspender uma conta diante de uso indevido ou risco à segurança, seguindo as regras institucionais aplicáveis. Solicitações de correção, encerramento da conta ou exercício de direitos de privacidade devem ser encaminhadas ao controlador pelo canal indicado na <a href="{% url 'politica_privacidade' %}">política de privacidade</a>.</p>
+
+    <h2 class="h5 mt-4">Responsável e contato</h2>
+    <p><strong>Responsável institucional informado:</strong> {{ controlador_nome|default:"A instituição responsável precisa identificar o responsável antes da publicação em produção." }}</p>
+    <p><strong>Contato:</strong> {{ contato_lgpd|default:"A instituição responsável precisa cadastrar um canal de contato." }}</p>
+    <p class="small text-secondary mt-4">Última atualização: 15 de outubro de 2026. Ao criar uma conta, a aceitação desta versão fica registrada com data e hora.</p>
+</article>
+{% endblock %}

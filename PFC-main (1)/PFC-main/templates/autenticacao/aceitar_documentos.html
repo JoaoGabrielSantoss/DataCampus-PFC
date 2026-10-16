@@ -1,0 +1,21 @@
+{% extends "autenticacao/base_autenticacao.html" %}
+{% block title %}Atualização dos documentos | DataCampus{% endblock %}
+{% block rotulo %}Atualização necessária{% endblock %}
+{% block cabecalho %}Leia os documentos{% endblock %}
+{% block texto %}Para continuar usando o DataCampus, revise a política de privacidade e os termos de uso atualizados.{% endblock %}
+{% block corpo_cartao %}
+<p class="mb-3"><a href="{% url 'politica_privacidade' %}" target="_blank" rel="noopener">Abrir política de privacidade</a></p>
+<p class="mb-4"><a href="{% url 'termos_de_uso' %}" target="_blank" rel="noopener">Abrir termos de uso</a></p>
+<form method="post">
+    {% csrf_token %}
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="leu_politica" id="leu_politica" required>
+        <label class="form-check-label" for="leu_politica">Li o aviso de privacidade.</label>
+    </div>
+    <div class="form-check mb-4">
+        <input class="form-check-input" type="checkbox" name="aceita_termos" id="aceita_termos" required>
+        <label class="form-check-label" for="aceita_termos">Li e aceito os termos de uso.</label>
+    </div>
+    <button class="acesso-botao" type="submit">Confirmar e continuar</button>
+</form>
+{% endblock %}

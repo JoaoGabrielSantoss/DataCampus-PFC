@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Política de privacidade | DataCampus{% endblock %}
+{% block content %}
+<article class="container py-5" style="max-width: 900px">
+    <p class="painel-rotulo">DataCampus · versão {{ versao_politica }} · 15 de outubro de 2026</p>
+    <h1 class="h2 mb-4">Política de privacidade</h1>
+    <p>Este aviso explica quais dados o DataCampus trata hoje, para quais finalidades e como o titular pode exercer seus direitos. Ele deve ser revisado pelo controlador institucional antes de o sistema ser usado em produção.</p>
+
+    <h2 class="h5 mt-4">Quem é responsável pelo tratamento</h2>
+    <p><strong>Controlador informado:</strong> {{ controlador_nome|default:"A instituição responsável precisa identificar o controlador antes da publicação em produção." }}</p>
+    <p><strong>Encarregado:</strong> {{ encarregado_lgpd|default:"A instituição responsável precisa definir e divulgar o canal do encarregado, quando aplicável." }}</p>
+    <p><strong>Canal para solicitações:</strong> {{ contato_lgpd|default:"A instituição responsável precisa cadastrar um canal de contato para pedidos de titulares." }}</p>
+
+    <h2 class="h5 mt-4">Dados tratados e finalidades atuais</h2>
+    <ul>
+        <li><strong>Conta:</strong> nome completo, email institucional e perfil, para criar a conta, autenticar e aplicar permissões.</li>
+        <li><strong>Segurança e auditoria:</strong> usuário, data e hora, rota acessada, método e status HTTP; nas mudanças de dados, modelo e identificador do registro e nomes dos campos alterados. Isso permite rastrear acessos e operações administrativas.</li>
+        <li><strong>Sessão e proteção contra falsificação de solicitações:</strong> cookies técnicos necessários ao funcionamento e à segurança do login.</li>
+    </ul>
+    <p>Os registros de auditoria não guardam endereço IP, corpo de formulários, senhas, tokens ou valores antigos/novos dos campos. A tela “Minha atividade” mostra os registros associados à própria conta.</p>
+    <p>O cadastro de voluntários e o armazenamento de dados coletados ainda não estão implementados neste projeto. Não use a versão atual para inserir dados de saúde ou outros dados sensíveis de participantes.</p>
+
+    <h2 class="h5 mt-4">Base legal, compartilhamento e armazenamento</h2>
+    <p>A base legal aplicável deve ser definida pelo controlador para cada finalidade e contexto institucional. A confirmação de leitura deste aviso não substitui essa definição nem representa, por si só, consentimento para qualquer tratamento.</p>
+    <p>O email pode ser enviado ao serviço Brevo quando uma pessoa solicita redefinição de senha. As páginas também carregam o Bootstrap pelo CDN jsDelivr, cujo provedor pode receber dados técnicos de conexão do navegador. O ambiente de desenvolvimento usa um arquivo SQLite local; a política de hospedagem, backups, criptografia em repouso e retenção precisa ser definida pela instituição antes da produção.</p>
+    <p>Os registros de auditoria não têm prazo de descarte automático configurado. O controlador deve estabelecer e documentar os prazos de retenção e descarte adequados antes da implantação.</p>
+
+    <h2 class="h5 mt-4">Proteções e limites técnicos</h2>
+    <p>As senhas são armazenadas com hash PBKDF2 do Django, e não em texto aberto. A aplicação utiliza proteção CSRF e controles de acesso por perfil e propriedade do estudo. Em modo de produção, o código exige HTTPS e cookies seguros. O arquivo SQLite local não é criptografado pela aplicação; a proteção em repouso depende do sistema de arquivos ou do banco/serviço de hospedagem escolhido.</p>
+
+    <h2 class="h5 mt-4">Direitos do titular</h2>
+    <p>O titular pode solicitar confirmação e acesso ao tratamento, correção, informação sobre compartilhamentos e demais direitos previstos na LGPD. Os pedidos devem ser encaminhados ao canal de contato acima; se o canal ainda não estiver preenchido, ele precisa ser solicitado à instituição responsável pelo sistema.</p>
+    <p>Consulte também a página oficial da <a href="https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares" target="_blank" rel="noopener noreferrer">ANPD sobre direitos dos titulares</a> e o <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm" target="_blank" rel="noopener noreferrer">texto da LGPD</a>.</p>
+    <p class="small text-secondary mt-4">Última atualização: 15 de outubro de 2026. Leia também os <a href="{% url 'termos_de_uso' %}">termos de uso</a>.</p>
+</article>
+{% endblock %}
