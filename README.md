@@ -1,10 +1,8 @@
 # DataCampus
 
-Sistema web para orientar a coleta de dados de voluntários de pesquisa a partir dos critérios de elegibilidade definidos por cada estudo.
+Sistema web para organizar estudos de pesquisa e seus critérios de elegibilidade. O cadastro de voluntários e a verificação automática de elegibilidade fazem parte dos objetivos futuros do projeto e ainda não estão implementados.
 
-O pesquisador cadastra um estudo, as variáveis que ele exige e seus critérios. O profissional registra os dados de cada voluntário e o sistema verifica a compatibilidade durante o preenchimento, interrompendo quando um critério deixa de ser atendido. Os dados já registrados ficam disponíveis para outros estudos enquanto houver pesquisa ativa vinculada ao voluntário.
-
-A classificação produzida pelo sistema é sugestão. A decisão sobre quem entra em um estudo é do pesquisador e fica registrada.
+Na versão atual, o pesquisador cadastra estudos, escolhe variáveis do catálogo e define critérios. A lista de estudos apresenta indicadores e um gráfico da distribuição por situação. O profissional terá funcionalidades de coleta e consulta de pendências em uma etapa futura.
 
 Projeto Final de Curso do Bacharelado em Sistemas de Informação da Universidade de Mogi das Cruzes.
 
@@ -17,6 +15,8 @@ Estão implementados a autenticação com controle de acesso por perfil, o catá
 A autenticação cobre o cadastro restrito ao domínio `@alunos.umc.br`, login, recuperação de senha por email e a separação entre pesquisador e profissional, com as rotas de cada um negando acesso a quem não tem o perfil.
 
 O pesquisador cadastra e edita estudos, cada um com situação de rascunho, ativo ou encerrado. Em cada estudo ele inclui e remove critérios de elegibilidade. Todo critério parte de uma variável do catálogo, que o pesquisador encontra descendo por categoria e subcategoria ou buscando pelo nome. Se a busca não acha a variável, ele pode propor uma nova, que entra no catálogo e fica disponível para qualquer estudo. O catálogo já vem carregado com as variáveis do perfil sociodemográfico.
+
+A lista de estudos funciona como um painel do pesquisador: apresenta a quantidade de estudos ativos, rascunhos e encerrados, além de um gráfico proporcional com a distribuição por situação.
 
 O cadastro exige confirmação de leitura da política de privacidade e aceitação dos termos de uso; as versões e datas de aceite ficam no cadastro da conta. A tela “Minha atividade” mostra até 100 registros recentes da própria conta. A auditoria administrativa acompanha acessos, logins e mudanças nos usuários, estudos, critérios e variáveis.
 

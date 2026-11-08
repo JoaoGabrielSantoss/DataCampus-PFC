@@ -26,6 +26,34 @@
     </div>
 </div>
 
+<section class="painel-grafico" aria-labelledby="titulo-grafico-estudos">
+    <div class="painel-secao">
+        <h2 class="painel-secao-titulo" id="titulo-grafico-estudos">Distribuição dos estudos</h2>
+        <span class="painel-secao-contagem">por situação</span>
+    </div>
+    {% if total_estudos %}
+        <div class="painel-grafico-lista" role="img" aria-label="Quantidade de estudos por situação">
+            <div class="painel-grafico-item">
+                <span>Ativos</span>
+                <span class="painel-grafico-trilho"><span class="painel-grafico-barra ativo" style="width: {% widthratio total_ativos total_estudos 100 %}%"></span></span>
+                <strong>{{ total_ativos }}</strong>
+            </div>
+            <div class="painel-grafico-item">
+                <span>Rascunhos</span>
+                <span class="painel-grafico-trilho"><span class="painel-grafico-barra rascunho" style="width: {% widthratio total_rascunhos total_estudos 100 %}%"></span></span>
+                <strong>{{ total_rascunhos }}</strong>
+            </div>
+            <div class="painel-grafico-item">
+                <span>Encerrados</span>
+                <span class="painel-grafico-trilho"><span class="painel-grafico-barra encerrado" style="width: {% widthratio total_encerrados total_estudos 100 %}%"></span></span>
+                <strong>{{ total_encerrados }}</strong>
+            </div>
+        </div>
+    {% else %}
+        <p class="painel-vazio">O gráfico aparecerá quando você cadastrar estudos.</p>
+    {% endif %}
+</section>
+
 <div class="painel-secao">
     <h2 class="painel-secao-titulo">Seus estudos</h2>
     <span class="painel-secao-contagem">{{ estudos|length }} registro{{ estudos|length|pluralize }}</span>

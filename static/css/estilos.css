@@ -680,6 +680,57 @@ a.painel-item:hover {
     font-size: .9rem;
 }
 
+.painel-grafico {
+    margin: 0 0 2.75rem;
+    padding: 1.4rem 1.6rem;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 18px;
+    box-shadow: var(--sombra-suave);
+}
+
+.painel-grafico-lista {
+    display: grid;
+    gap: 1rem;
+}
+
+.painel-grafico-item {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(3rem, 1fr) 2rem;
+    align-items: center;
+    gap: .8rem;
+    font-size: .9rem;
+}
+
+.painel-grafico-item strong {
+    text-align: right;
+    color: var(--vinho);
+}
+
+.painel-grafico-trilho {
+    display: block;
+    height: .75rem;
+    overflow: hidden;
+    background: #f6eeec;
+    border-radius: 999px;
+}
+
+.painel-grafico-barra {
+    display: block;
+    height: 100%;
+    min-width: 0;
+    background: var(--salmao);
+    border-radius: inherit;
+}
+
+.painel-grafico-barra.rascunho {
+    background: var(--salmao-claro);
+}
+
+.painel-grafico-barra.encerrado {
+    background: #b8a8a3;
+}
+
 .painel-secao {
     display: flex;
     align-items: baseline;

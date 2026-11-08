@@ -19,8 +19,10 @@ def estudo_do_pesquisador(request, id):
 @exige_perfil(Usuario.Perfil.PESQUISADOR)
 def listar(request):
     estudos = Estudo.objects.filter(pesquisador=request.user).annotate(total_criterios=Count("criterios"))
+    total_estudos = estudos.count()
     contexto = {
         "estudos": estudos,
+        "total_estudos": total_estudos,
         "total_ativos": estudos.filter(situacao=Estudo.Situacao.ATIVO).count(),
         "total_rascunhos": estudos.filter(situacao=Estudo.Situacao.RASCUNHO).count(),
         "total_encerrados": estudos.filter(situacao=Estudo.Situacao.ENCERRADO).count(),
