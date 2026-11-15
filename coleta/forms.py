@@ -1,0 +1,83 @@
+from django import forms
+from django.core.exceptions import ValidationError
+
+from catalogo.models import OpcaoDominio, Variavel
+from estudos.models import Estudo
+
+from .seguranca import validar_cpf
+
+
+class RegistroParticipacaoForm(forms.Form):
+    estudo = forms.ModelChoiceField(queryset=Estudo.objects.none(), label="Estudo")
+    cpf = forms.CharField(label="CPF do voluntário", max_length=18)
+    autorizado_reuso = forms.BooleanField(
+        label="O voluntário autorizou o uso dos dados em outros estudos",
+        required=False,
+    )
+
+    def __init__(self, *args, usuario, **kwargs):
+        super().__init__(*args, **kwargs)
+        estudos = Estudo.objects.filter(situacao=Estudo.Situacao.ATIVO)
+        if usuario.e_pesquisador:
+            estudos = estudos.filter(pesquisador=usuario)
+        self.fields["estudo"].queryset = estudos
+
+    def clean_cpf(self):
+        return validar_cpf(self.cleaned_data["cpf"])
+
+    def clean_estudo(self):
+        estudo = self.cleaned_data["estudo"]
+        if not estudo.criterios.exists():
+            raise ValidationError("O estudo precisa ter pelo menos um critério antes de iniciar a coleta.")
+        return estudo
+
+
+class ValoresColetaForm(forms.Form):
+    def __init__(self, *args, variaveis=(), valores=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.variaveis = list(variaveis)
+        valores = valores or {}
+        for variavel in self.variaveis:
+            inicial = valores.get(variavel.pk)
+            if variavel.tipo == Variavel.Tipo.BOOLEANA and inicial is not None:
+                inicial = "true" if inicial else "false"
+            kwargs_campo = {"label": variavel.nome, "required": False, "initial": inicial}
+            if variavel.tipo == Variavel.Tipo.NUMERICA:
+                self.fields[self.chave(variavel)] = forms.DecimalField(
+                    max_digits=12, decimal_places=2, min_value=variavel.minimo, max_value=variavel.maximo,
+                    **kwargs_campo,
+                )
+            elif variavel.tipo == Variavel.Tipo.DATA:
+                self.fields[self.chave(variavel)] = forms.DateField(
+                    widget=forms.DateInput(attrs={"type": "date"}), **kwargs_campo
+                )
+            elif variavel.tipo in (Variavel.Tipo.NOMINAL, Variavel.Tipo.ORDINAL):
+                self.fields[self.chave(variavel)] = forms.ModelChoiceField(
+                    queryset=OpcaoDominio.objects.filter(dominio=variavel.dominio),
+                    empty_label="Selecione",
+                    **kwargs_campo,
+                )
+            elif variavel.tipo == Variavel.Tipo.BOOLEANA:
+                self.fields[self.chave(variavel)] = forms.TypedChoiceField(
+                    choices=(("", "Selecione"), ("true", "Sim"), ("false", "Não")),
+                    coerce=lambda valor: valor == "true",
+                    empty_value=None,
+                    **kwargs_campo,
+                )
+
+    @staticmethod
+    def chave(variavel):
+        return f"variavel_{variavel.pk}"
+
+    def clean(self):
+        dados = super().clean()
+        for variavel in self.variaveis:
+            valor = dados.get(self.chave(variavel))
+            if valor is None:
+                continue
+            if variavel.tipo == Variavel.Tipo.NUMERICA:
+                if variavel.minimo is not None and valor < variavel.minimo:
+                    self.add_error(self.chave(variavel), f"O valor mínimo é {variavel.minimo}.")
+                if variavel.maximo is not None and valor > variavel.maximo:
+                    self.add_error(self.chave(variavel), f"O valor máximo é {variavel.maximo}.")
+        return dados

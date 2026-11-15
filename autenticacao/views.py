@@ -42,12 +42,16 @@ def inicio(request):
 
 @exige_perfil(Usuario.Perfil.PROFISSIONAL)
 def coleta(request):
-    return render(request, "autenticacao/coleta.html")
+    from coleta.views import registrar
+
+    return registrar(request)
 
 
 @exige_perfil(Usuario.Perfil.PROFISSIONAL)
 def pendencias(request):
-    return render(request, "autenticacao/pendencias.html")
+    from coleta.views import lista_pendencias
+
+    return lista_pendencias(request)
 
 
 def politica_privacidade(request):

@@ -1,0 +1,17 @@
+{% extends "painel.html" %}
+{% block title %}Registrar participação | DataCampus{% endblock %}
+{% block content %}
+<div class="painel-cabecalho">
+  <div><p class="painel-rotulo">Coleta de dados de pesquisa</p><h1 class="painel-titulo">Registrar participação</h1>
+  <p class="painel-abertura">Escolha o estudo e informe o CPF para localizar ou cadastrar o voluntário.</p></div>
+</div>
+<form class="painel-formulario" method="post">
+  {% csrf_token %}
+  {% for field in form %}<div class="mb-3">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+    {% if field.help_text %}<div class="ajuda-campo">{{ field.help_text }}</div>{% endif %}
+    {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+  </div>{% endfor %}
+  <div class="painel-formulario-acoes"><button class="painel-acao" type="submit">Continuar</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "painel.html" %}
+{% block title %}Coleta de {{ estudo.nome }} | DataCampus{% endblock %}
+{% block content %}
+<div class="painel-cabecalho"><div><p class="painel-rotulo">Acompanhamento da coleta</p><h1 class="painel-titulo">{{ estudo.nome }}</h1></div></div>
+<div class="painel-indicadores">
+  <div class="painel-indicador"><span class="painel-numero">{{ totais.total }}</span><span class="painel-legenda">Participações</span></div>
+  <div class="painel-indicador"><span class="painel-numero">{{ totais.pendentes }}</span><span class="painel-legenda">Pendentes</span></div>
+  <div class="painel-indicador"><span class="painel-numero">{{ totais.elegiveis }}</span><span class="painel-legenda">Elegíveis</span></div>
+  <div class="painel-indicador"><span class="painel-numero">{{ totais.inelegiveis }}</span><span class="painel-legenda">Inelegíveis</span></div>
+</div>
+<div class="painel-secao"><h2 class="painel-secao-titulo">Participações</h2><span class="painel-secao-contagem">{{ totais.total }}</span></div>
+<div class="painel-lista">{% for participacao in participacoes %}
+  <a class="painel-linha" href="{% url 'coleta:participacao' participacao.id %}"><span class="painel-linha-texto"><strong>{{ participacao.voluntario.codigo_publico }}</strong><span class="painel-linha-sub">{{ participacao.get_situacao_display }} · {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</span></span></a>
+{% empty %}<p class="painel-vazio">Ainda não há participações neste estudo.</p>{% endfor %}</div>
+{% endblock %}

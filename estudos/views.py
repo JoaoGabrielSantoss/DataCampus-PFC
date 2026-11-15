@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from autenticacao.models import Usuario
 from autenticacao.permissoes import exige_perfil
 from catalogo.models import Categoria, Subcategoria, Variavel, normalizar
+from coleta.models import Participacao
 
 from .forms import CriterioForm, EstudoForm, VariavelPropostaForm
 from .models import Criterio, Estudo
@@ -18,14 +19,22 @@ def estudo_do_pesquisador(request, id):
 
 @exige_perfil(Usuario.Perfil.PESQUISADOR)
 def listar(request):
-    estudos = Estudo.objects.filter(pesquisador=request.user).annotate(total_criterios=Count("criterios"))
+    estudos = Estudo.objects.filter(pesquisador=request.user).annotate(
+        total_criterios=Count("criterios", distinct=True),
+        total_participacoes=Count("participacoes", distinct=True),
+    )
     total_estudos = estudos.count()
+    participacoes = Participacao.objects.filter(estudo__pesquisador=request.user)
     contexto = {
         "estudos": estudos,
         "total_estudos": total_estudos,
         "total_ativos": estudos.filter(situacao=Estudo.Situacao.ATIVO).count(),
         "total_rascunhos": estudos.filter(situacao=Estudo.Situacao.RASCUNHO).count(),
         "total_encerrados": estudos.filter(situacao=Estudo.Situacao.ENCERRADO).count(),
+        "total_participacoes": participacoes.count(),
+        "participacoes_pendentes": participacoes.filter(situacao=Participacao.Situacao.PENDENTE).count(),
+        "participacoes_elegiveis": participacoes.filter(situacao=Participacao.Situacao.ELEGIVEL).count(),
+        "participacoes_inelegiveis": participacoes.filter(situacao=Participacao.Situacao.INELEGIVEL).count(),
     }
     return render(request, "estudos/lista.html", contexto)
 

@@ -1,5 +1,7 @@
 import pytest
+from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from autenticacao.models import Usuario
 from catalogo.models import Categoria, Subcategoria, Variavel
@@ -8,10 +10,25 @@ from estudos.models import Criterio, Estudo
 pytestmark = pytest.mark.django_db
 
 
+def criar_usuario_aceito(email, nome, perfil):
+    usuario = Usuario.objects.create_user(
+        email, nome, "Senha!2026x", perfil=perfil
+    )
+    agora = timezone.now()
+    usuario.aceitou_politica_em = agora
+    usuario.versao_politica = settings.LGPD_POLITICA_VERSAO
+    usuario.aceitou_termos_em = agora
+    usuario.versao_termos = settings.LGPD_TERMOS_VERSAO
+    usuario.save(update_fields=[
+        "aceitou_politica_em", "versao_politica", "aceitou_termos_em", "versao_termos",
+    ])
+    return usuario
+
+
 @pytest.fixture
 def pesquisadora():
-    return Usuario.objects.create_user(
-        "p@alunos.umc.br", "Pesquisadora Teste", "Senha!2026x", perfil=Usuario.Perfil.PESQUISADOR
+    return criar_usuario_aceito(
+        "p@alunos.umc.br", "Pesquisadora Teste", Usuario.Perfil.PESQUISADOR
     )
 
 
@@ -151,8 +168,8 @@ def test_busca_sem_resultado_oferece_proposta(cliente, estudo):
 
 
 def test_profissional_nao_acessa_o_seletor(client, estudo):
-    profissional = Usuario.objects.create_user(
-        "t@alunos.umc.br", "Profissional Teste", "Senha!2026x", perfil=Usuario.Perfil.PROFISSIONAL
+    profissional = criar_usuario_aceito(
+        "t@alunos.umc.br", "Profissional Teste", Usuario.Perfil.PROFISSIONAL
     )
     client.force_login(profissional)
 
@@ -162,8 +179,8 @@ def test_profissional_nao_acessa_o_seletor(client, estudo):
 
 
 def test_seletor_de_estudo_alheio_responde_404(client, estudo):
-    outra = Usuario.objects.create_user(
-        "o@alunos.umc.br", "Outra Pesquisadora", "Senha!2026x", perfil=Usuario.Perfil.PESQUISADOR
+    outra = criar_usuario_aceito(
+        "o@alunos.umc.br", "Outra Pesquisadora", Usuario.Perfil.PESQUISADOR
     )
     client.force_login(outra)
 

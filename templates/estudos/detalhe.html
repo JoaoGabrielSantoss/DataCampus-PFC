@@ -53,6 +53,9 @@
     <a class="painel-acao" href="{% url 'estudos:escolher_variavel' estudo.id %}">
         <span aria-hidden="true">+</span> Novo critério
     </a>
+    {% if estudo.situacao == 'ativo' %}
+        <a class="painel-voltar" href="{% url 'coleta:painel_estudo' estudo.id %}">Acompanhar coleta</a>
+    {% endif %}
     <a class="painel-voltar" href="{% url 'estudos:listar' %}">Voltar para os estudos</a>
 </div>
 {% endblock %}

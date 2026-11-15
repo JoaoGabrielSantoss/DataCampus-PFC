@@ -54,6 +54,20 @@
     {% endif %}
 </section>
 
+<section class="painel-grafico" aria-labelledby="titulo-grafico-participacoes">
+    <div class="painel-secao">
+        <h2 class="painel-secao-titulo" id="titulo-grafico-participacoes">Situação das participações</h2>
+        <span class="painel-secao-contagem">{{ total_participacoes }} no total</span>
+    </div>
+    {% if total_participacoes %}
+        <div class="painel-grafico-lista" role="img" aria-label="Quantidade de participações por situação">
+            <div class="painel-grafico-item"><span>Pendentes</span><span class="painel-grafico-trilho"><span class="painel-grafico-barra rascunho" style="width: {% widthratio participacoes_pendentes total_participacoes 100 %}%"></span></span><strong>{{ participacoes_pendentes }}</strong></div>
+            <div class="painel-grafico-item"><span>Elegíveis</span><span class="painel-grafico-trilho"><span class="painel-grafico-barra ativo" style="width: {% widthratio participacoes_elegiveis total_participacoes 100 %}%"></span></span><strong>{{ participacoes_elegiveis }}</strong></div>
+            <div class="painel-grafico-item"><span>Inelegíveis</span><span class="painel-grafico-trilho"><span class="painel-grafico-barra encerrado" style="width: {% widthratio participacoes_inelegiveis total_participacoes 100 %}%"></span></span><strong>{{ participacoes_inelegiveis }}</strong></div>
+        </div>
+    {% else %}<p class="painel-vazio">O gráfico aparecerá quando houver participações cadastradas.</p>{% endif %}
+</section>
+
 <div class="painel-secao">
     <h2 class="painel-secao-titulo">Seus estudos</h2>
     <span class="painel-secao-contagem">{{ estudos|length }} registro{{ estudos|length|pluralize }}</span>
@@ -70,7 +84,7 @@
                 <span class="painel-linha-sub">{{ estudo.condicao }}</span>
             </span>
             <span class="painel-linha-contagem">
-                {{ estudo.total_criterios }} critério{{ estudo.total_criterios|pluralize }}{% if estudo.participantes_necessarios %}, meta de {{ estudo.participantes_necessarios }}{% endif %}
+                {{ estudo.total_criterios }} critério{{ estudo.total_criterios|pluralize }}, {{ estudo.total_participacoes }} participação{{ estudo.total_participacoes|pluralize }}{% if estudo.participantes_necessarios %}, meta de {{ estudo.participantes_necessarios }}{% endif %}
             </span>
             <span class="painel-selo {{ estudo.situacao }}">{{ estudo.get_situacao_display }}</span>
         </a>

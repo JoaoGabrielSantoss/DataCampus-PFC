@@ -1,24 +1,30 @@
 # DataCampus
 
-Sistema web para organizar estudos de pesquisa e seus critérios de elegibilidade. O cadastro de voluntários e a verificação automática de elegibilidade fazem parte dos objetivos futuros do projeto e ainda não estão implementados.
+Sistema web para organizar estudos de pesquisa, registrar dados de voluntários e acompanhar critérios de elegibilidade.
 
-Na versão atual, o pesquisador cadastra estudos, escolhe variáveis do catálogo e define critérios. A lista de estudos apresenta indicadores e um gráfico da distribuição por situação. O profissional terá funcionalidades de coleta e consulta de pendências em uma etapa futura.
+Na versão atual, o pesquisador cadastra estudos, escolhe variáveis do catálogo e define critérios. O profissional registra a participação e os dados solicitados pelo estudo. O sistema compara os valores com os critérios, mostra pendências e atualiza o painel do pesquisador.
 
 Projeto Final de Curso do Bacharelado em Sistemas de Informação da Universidade de Mogi das Cruzes.
 
-Autores: Bruno de Faria Assis e João Gabriel Dos Santos.
+Autor: João Gabriel dos Santos.
 
 ## Estado atual
 
-Estão implementados a autenticação com controle de acesso por perfil, o catálogo de variáveis e o cadastro de estudos e critérios.
+Estão implementados a autenticação com controle de acesso por perfil, o catálogo de variáveis, o cadastro de estudos e critérios, o registro de voluntários e a coleta de dados.
 
 A autenticação cobre o cadastro restrito ao domínio `@alunos.umc.br`, login, recuperação de senha por email e a separação entre pesquisador e profissional, com as rotas de cada um negando acesso a quem não tem o perfil.
 
 O pesquisador cadastra e edita estudos, cada um com situação de rascunho, ativo ou encerrado. Em cada estudo ele inclui e remove critérios de elegibilidade. Todo critério parte de uma variável do catálogo, que o pesquisador encontra descendo por categoria e subcategoria ou buscando pelo nome. Se a busca não acha a variável, ele pode propor uma nova, que entra no catálogo e fica disponível para qualquer estudo. O catálogo já vem carregado com as variáveis do perfil sociodemográfico.
 
-A lista de estudos funciona como um painel do pesquisador: apresenta a quantidade de estudos ativos, rascunhos e encerrados, além de um gráfico proporcional com a distribuição por situação.
+A lista de estudos funciona como um painel do pesquisador: apresenta estudos por situação, participações pendentes, elegíveis e inelegíveis, e gráficos calculados a partir do banco.
 
-O cadastro exige confirmação de leitura da política de privacidade e aceitação dos termos de uso; as versões e datas de aceite ficam no cadastro da conta. A tela “Minha atividade” mostra até 100 registros recentes da própria conta. A auditoria administrativa acompanha acessos, logins e mudanças nos usuários, estudos, critérios e variáveis.
+O profissional registra um voluntário por CPF e preenche as variáveis previstas nos critérios do estudo. O CPF não é mostrado nas telas após o registro. O sistema guarda o CPF cifrado e usa um identificador HMAC para localizar o mesmo voluntário sem gravar o CPF como identificador. Os valores coletados também são cifrados antes de serem salvos.
+
+Na coleta, cada critério é comparado com o valor correspondente. Se faltarem dados, a participação fica pendente; quando todos os dados estão preenchidos, fica elegível ou inelegível de acordo com as regras do estudo. O profissional não vê os critérios nem o resultado final. O pesquisador acompanha as situações no painel do estudo.
+
+O reuso entre estudos depende de autorização registrada. Ao encerrar um estudo, os dados vinculados a ele são removidos quando não estão sendo usados por outro estudo ativo. Voluntários sem participação ativa também são removidos.
+
+O cadastro exige confirmação de leitura da política de privacidade e aceitação dos termos de uso; as versões e datas de aceite ficam no cadastro da conta. A tela “Minha atividade” mostra até 100 registros recentes da própria conta. A auditoria administrativa acompanha acessos e mudanças nos usuários, estudos, critérios, variáveis, voluntários, participações e dados coletados, sem registrar os valores pessoais.
 
 Os operadores oferecidos dependem do tipo da variável:
 
@@ -32,7 +38,7 @@ Os operadores oferecidos dependem do tipo da variável:
 
 Variável de texto livre não serve de critério e não aparece no seletor. Um critério de data pode ser escrito com dia, só com mês e ano ou só com o ano, e é exibido do mesmo jeito que foi informado.
 
-Faltam o cadastro de voluntários, os valores coletados e a verificação de elegibilidade. Por isso as telas do profissional, registro de dados e pendências, existem ainda sem conteúdo. O banco em uso durante o desenvolvimento é SQLite; a migração para PostgreSQL está prevista.
+O banco usado durante o desenvolvimento é SQLite. A migração e a validação do sistema em PostgreSQL ainda precisam ser feitas antes da publicação.
 
 ## Stack
 
@@ -69,7 +75,7 @@ O login, o hash de senhas, a proteção CSRF, as permissões por perfil e o filt
 
 O middleware registra método, padrão da rota e status HTTP; os sinais registram login/logout e criação, alteração e exclusão em modelos de conta, estudo, critério e variável. A auditoria guarda somente metadados e nomes de campos alterados: não grava IP, corpos de requisição, senhas, tokens nem valores antigos/novos. Administradores com permissão de leitura consultam “Eventos de auditoria” no Django Admin. Os registros não têm descarte automático; o controlador deve definir a retenção antes da produção.
 
-Senhas são armazenadas com hash PBKDF2, não criptografadas de forma reversível. O SQLite usado no desenvolvimento não é criptografado pela aplicação. Em produção, use banco e backups com criptografia em repouso, HTTPS e gestão de chaves pela plataforma; não armazene dados sensíveis de participantes até que um modelo de dados e controles apropriados sejam implementados. A coleta de dados de voluntários ainda não está implementada.
+Senhas são armazenadas com hash PBKDF2, não criptografadas de forma reversível. O CPF e os valores coletados são cifrados pela aplicação com chaves Fernet e identificados por HMAC. Essas chaves ficam somente no `.env` ou no ambiente de hospedagem, nunca no repositório. A cifragem da aplicação não cifra o arquivo SQLite inteiro; em produção também são necessários banco e backups protegidos, HTTPS e gestão segura das chaves. A instituição ainda precisa definir base legal, retenção e responsabilidades antes do uso real com dados de pesquisa.
 
 As páginas `/politica-de-privacidade/` e `/termos-de-uso/` são públicas. Antes da publicação, preencha `LGPD_CONTROLADOR_NOME`, `LGPD_CONTATO` e `LGPD_ENCARREGADO` no ambiente de produção e defina base legal, retenção, descarte e responsabilidades com a instituição. A página informativa não substitui a revisão jurídica e institucional.
 
@@ -87,6 +93,8 @@ Ficam no arquivo `.env`, na raiz, que não é versionado. O `settings.py` lê es
 | `LGPD_CONTROLADOR_NOME` | Nome oficial do controlador responsável pelo sistema |
 | `LGPD_CONTATO` | Canal oficial para solicitações sobre dados pessoais e termos |
 | `LGPD_ENCARREGADO` | Identificação/canal do encarregado, quando aplicável |
+| `DATACAMPUS_FERNET_KEY` | Chave Fernet usada para cifrar o CPF e os valores coletados |
+| `DATACAMPUS_HMAC_KEY` | Chave secreta usada para gerar o identificador pseudonimizado do CPF |
 
 Para gerar a chave secreta:
 
@@ -102,13 +110,15 @@ O envio acontece apenas pela API do Brevo, em `configuracao/email.py`. Cada mens
 
 Escrito como backend de email do Django, o que mantém as views usando `send_mail` normalmente. A mensagem de recuperação de senha tem versão em texto e versão em HTML, e a segunda é a que vai no `htmlContent`.
 
+Para conferir a sintaxe do remetente, a autenticação da chave e se o remetente está ativo no Brevo, execute `python manage.py verificar_email`. Esse comando faz apenas uma consulta à API e não envia mensagem. Para testar entrega real, depois dessa validação é necessário disparar uma notificação para um endereço controlado e conferir o recebimento.
+
 Dois pontos costumam derrubar o envio na primeira tentativa.
 
 Se a conta tiver restrição por IP ativa, o Brevo responde 401 até que o endereço de onde parte a requisição seja autorizado em https://app.brevo.com/security/authorised_ips. Vale para a máquina de desenvolvimento e para o Render, e o endereço IPv6 precisa ser autorizado junto com o IPv4, porque a saída pode usar qualquer um dos dois.
 
 O endereço em `EMAIL_REMETENTE` precisa estar verificado na conta. Quando não está, a API responde sucesso e descarta a mensagem depois, na fila de envio. Nada aparece no log do servidor nesse caso, e o motivo só é visível no log de eventos da conta, em Transactional, Logs, ou pelo endpoint `GET /v3/smtp/statistics/events`.
 
-Quando o envio falha, o Django registra o erro no log e ainda assim mostra a tela de confirmação ao usuário, para não revelar quais emails têm cadastro. Ao testar recuperação de senha, acompanhe o terminal do servidor.
+Se uma notificação da coleta falhar, o sistema registra a falha no log e avisa o usuário sem desfazer os dados salvos. A recuperação de senha usa o backend do Django e também depende de chave válida, remetente ativo e configuração de IP no Brevo.
 
 ## Organização
 
@@ -116,13 +126,14 @@ Quando o envio falha, o Django registra o erro no log e ainda assim mostra a tel
 autenticacao/    usuário, formulários, views e rotas de acesso
 catalogo/        variáveis, domínios de valores e operadores de comparação
 estudos/         estudos, critérios e seletor de variáveis
+coleta/          voluntários, dados cifrados, participação e avaliação de critérios
 configuracao/    settings, urls do projeto e backend de email
 templates/       layouts e telas de cada app
 static/css/      folha de estilo sobre o Bootstrap
 static/js/       seletor de variáveis e campos do formulário de critério
 ```
 
-O modelo de usuário é próprio, com email como identificador e nome completo obrigatório. O cadastro é aberto a quem tem email `@alunos.umc.br` e a pessoa escolhe o próprio perfil no formulário. O administrador pode corrigir o perfil de qualquer conta pelo admin.
+O modelo de usuário é próprio, com email como identificador e nome completo obrigatório. O cadastro é aberto a quem tem email `@alunos.umc.br` e a pessoa escolhe o próprio perfil no formulário. O administrador pode corrigir o perfil de qualquer conta pelo admin. No projeto, perfis e dados são de demonstração; a instituição deve definir como conceder acessos antes de usar dados reais.
 
 Cada conta tem um perfil, pesquisador ou profissional, e ele decide o que a pessoa alcança. O profissional chega ao registro de dados e à relação de pendências. O pesquisador chega aos estudos e aos critérios de cada um. Quem não tem o perfil recebe 403, mesmo digitando a URL direto, porque a verificação está no decorador `exige_perfil`, em `autenticacao/permissoes.py`, aplicado na view.
 

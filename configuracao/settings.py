@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "autenticacao.apps.AutenticacaoConfig",
     "estudos",
     "catalogo",
+    "coleta.apps.ColetaConfig",
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,6 @@ if not BREVO_API_KEY:
         "Defina BREVO_API_KEY no arquivo .env ou no ambiente. "
         "O envio de email acontece apenas pela API do Brevo."
     )
+
+DATACAMPUS_FERNET_KEY = os.environ.get("DATACAMPUS_FERNET_KEY", "").strip()
+DATACAMPUS_HMAC_KEY = os.environ.get("DATACAMPUS_HMAC_KEY", "").strip()
