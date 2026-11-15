@@ -122,7 +122,7 @@ def participacao(request, id):
                         coletado_por=request.user,
                         estudo_origem=participacao.estudo,
                     )
-                dado.definir_valor(preparar_valor(valor))
+                dado.definir_valor(preparar_valor(variavel, valor))
                 dado.coletado_por = request.user
                 dado.estudo_origem = participacao.estudo
                 dado.save()
