@@ -10,6 +10,6 @@
 </div>
 <div class="painel-secao"><h2 class="painel-secao-titulo">Participações</h2><span class="painel-secao-contagem">{{ totais.total }}</span></div>
 <div class="painel-lista">{% for participacao in participacoes %}
-  <a class="painel-linha" href="{% url 'coleta:participacao' participacao.id %}"><span class="painel-linha-texto"><strong>{{ participacao.voluntario.codigo_publico }}</strong><span class="painel-linha-sub">{{ participacao.get_situacao_display }} · {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</span></span></a>
+  <a class="painel-linha" href="{% url 'coleta:participacao' participacao.id %}"><span class="painel-linha-texto"><strong>{{ participacao.voluntario.nome_publico }}</strong><span class="painel-linha-sub">{{ participacao.get_situacao_display }} · {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</span></span></a>
 {% empty %}<p class="painel-vazio">Ainda não há participações neste estudo.</p>{% endfor %}</div>
 {% endblock %}

@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.db import transaction
+from django.db.models import Q
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 import logging
 from django.shortcuts import get_object_or_404, redirect, render
@@ -50,19 +52,25 @@ def registrar(request):
     if request.method == "POST" and form.is_valid():
         estudo = form.cleaned_data["estudo"]
         with transaction.atomic():
-            voluntario, novo, autorizacao_atualizada = Voluntario.registrar(
+            voluntario, novo, autorizacao_atualizada, nome_atualizado = Voluntario.registrar(
                 form.cleaned_data["cpf"],
+                nome=form.cleaned_data["nome"],
                 autorizado_reuso=form.cleaned_data["autorizado_reuso"],
                 usuario=request.user,
             )
             if novo:
                 registrar_evento(request.user, EventoAuditoria.Tipo.CRIACAO, voluntario)
-            elif autorizacao_atualizada:
+            elif autorizacao_atualizada or nome_atualizado:
+                campos = []
+                if nome_atualizado:
+                    campos.append("nome_cifrado")
+                if autorizacao_atualizada:
+                    campos.append("autorizou_reuso_em")
                 registrar_evento(
                     request.user,
                     EventoAuditoria.Tipo.ALTERACAO,
                     voluntario,
-                    campos=("autorizou_reuso_em",),
+                    campos=campos,
                 )
             participacao, criada = Participacao.objects.get_or_create(
                 estudo=estudo,
@@ -80,15 +88,26 @@ def registrar(request):
             participacao.situacao = situacao
             participacao.save(update_fields=["situacao", "atualizado_em"])
             registrar_evento(request.user, EventoAuditoria.Tipo.CRIACAO, participacao)
-        if faltantes:
+        if situacao == Participacao.Situacao.PENDENTE and faltantes:
             enviado = informar(
                 request.user.email,
                 "Pendência de coleta no DataCampus",
-                f"Há dados pendentes para a participação no estudo {estudo.nome}.",
+                f"Há dados pendentes para o paciente {voluntario.nome_publico} no estudo {estudo.nome}.",
             )
             if not enviado:
                 messages.warning(request, "A participação foi registrada, mas o e-mail de aviso não foi enviado.")
-        messages.success(request, "Participação registrada. Confira os dados que ainda precisam ser coletados.")
+            messages.success(request, "Participação registrada. Confira os dados que ainda precisam ser coletados.")
+        elif situacao == Participacao.Situacao.ELEGIVEL:
+            enviado = informar(
+                estudo.pesquisador.email,
+                "Coleta concluída no DataCampus",
+                f"A coleta do paciente {voluntario.nome_publico} no estudo {estudo.nome} foi concluída.",
+            )
+            messages.success(request, "Participação registrada e coleta concluída.")
+            if not enviado:
+                messages.warning(request, "A coleta foi concluída, mas o e-mail de aviso ao pesquisador não foi enviado.")
+        else:
+            messages.success(request, "Participação registrada. A coleta foi encerrada para este estudo.")
         return redirect("coleta:participacao", id=participacao.pk)
     return render(request, "coleta/registro.html", {"form": form})
 
@@ -103,31 +122,44 @@ def participacao(request, id):
     participacao = get_object_or_404(participacoes, pk=id)
     pendentes = variaveis_pendentes(participacao)
     valores = valores_conhecidos(participacao)
-    form = ValoresColetaForm(request.POST or None, variaveis=pendentes, valores=valores)
-    if request.method == "POST" and form.is_valid():
+    encerrada_por_inelegibilidade = participacao.situacao == Participacao.Situacao.INELEGIVEL
+    pode_coletar = request.user.e_profissional and not encerrada_por_inelegibilidade and bool(pendentes)
+    if request.method == "POST" and not request.user.e_profissional:
+        raise PermissionDenied
+
+    # A coleta é sequencial para que o servidor possa encerrar o fluxo no
+    # primeiro critério não atendido, sem gravar as respostas seguintes.
+    variavel_atual = pendentes[0] if pode_coletar else None
+    variaveis_formulario = [variavel_atual] if variavel_atual else []
+    form = ValoresColetaForm(
+        request.POST or None,
+        variaveis=variaveis_formulario,
+        valores=valores,
+    )
+    if pode_coletar:
+        form.fields[ValoresColetaForm.chave(variavel_atual)].required = True
+
+    if request.method == "POST" and pode_coletar and form.is_valid():
         with transaction.atomic():
-            for variavel in pendentes:
-                valor = form.cleaned_data.get(ValoresColetaForm.chave(variavel))
-                if valor is None:
-                    continue
-                dado = DadoColetado.objects.filter(
+            valor = form.cleaned_data[ValoresColetaForm.chave(variavel_atual)]
+            dado = DadoColetado.objects.filter(
+                voluntario=participacao.voluntario,
+                variavel=variavel_atual,
+                estudo_origem=participacao.estudo,
+            ).first()
+            if dado is None:
+                dado = DadoColetado(
                     voluntario=participacao.voluntario,
-                    variavel=variavel,
+                    variavel=variavel_atual,
+                    coletado_por=request.user,
                     estudo_origem=participacao.estudo,
-                ).first()
-                if dado is None:
-                    dado = DadoColetado(
-                        voluntario=participacao.voluntario,
-                        variavel=variavel,
-                        coletado_por=request.user,
-                        estudo_origem=participacao.estudo,
-                    )
-                dado.definir_valor(preparar_valor(variavel, valor))
-                dado.coletado_por = request.user
-                dado.estudo_origem = participacao.estudo
-                dado.save()
-                participacao.dados_utilizados.add(dado)
-                registrar_evento(request.user, EventoAuditoria.Tipo.CRIACAO, dado)
+                )
+            dado.definir_valor(preparar_valor(variavel_atual, valor))
+            dado.coletado_por = request.user
+            dado.estudo_origem = participacao.estudo
+            dado.save()
+            participacao.dados_utilizados.add(dado)
+            registrar_evento(request.user, EventoAuditoria.Tipo.CRIACAO, dado)
             valores = valores_conhecidos(participacao)
             anterior = participacao.situacao
             situacao, faltantes = avaliar_estudo(participacao.estudo, valores)
@@ -139,7 +171,7 @@ def participacao(request, id):
             enviado = informar(
                 participacao.estudo.pesquisador.email,
                 "Coleta concluída no DataCampus",
-                f"A coleta do voluntário {participacao.voluntario.codigo_publico} no estudo {participacao.estudo.nome} foi concluída.",
+                f"A coleta do paciente {participacao.voluntario.nome_publico} no estudo {participacao.estudo.nome} foi concluída.",
             )
             messages.success(request, "Dados salvos. A coleta deste estudo foi concluída.")
             if not enviado:
@@ -147,10 +179,15 @@ def participacao(request, id):
         else:
             messages.success(request, "Dados salvos.")
         return redirect("coleta:participacao", id=participacao.pk)
+    respondidos = participacao.estudo.criterios.count() - len(pendentes)
     return render(request, "coleta/participacao.html", {
         "participacao": participacao,
         "form": form,
         "pendentes": pendentes,
+        "pode_coletar": pode_coletar,
+        "encerrada_por_inelegibilidade": encerrada_por_inelegibilidade,
+        "passo_atual": respondidos + 1,
+        "total_criterios": participacao.estudo.criterios.count(),
         "situacao": participacao.situacao,
         "pesquisador": request.user.e_pesquisador,
     })
@@ -177,3 +214,61 @@ def painel_estudo(request, id):
         "inelegiveis": participacoes.filter(situacao=Participacao.Situacao.INELEGIVEL).count(),
     }
     return render(request, "coleta/painel_estudo.html", {"estudo": estudo, "participacoes": participacoes, "totais": totais})
+
+
+def formatar_dado_voluntario(dado):
+    valor = dado.obter_valor()
+    variavel = dado.variavel
+    if variavel.tipo in (variavel.Tipo.NOMINAL, variavel.Tipo.ORDINAL):
+        try:
+            opcao = variavel.dominio.opcoes.filter(pk=int(valor)).first() if variavel.dominio_id else None
+        except (TypeError, ValueError):
+            opcao = None
+        valor = opcao.rotulo if opcao else "Resposta registrada"
+    elif variavel.tipo == variavel.Tipo.BOOLEANA:
+        valor = "Sim" if valor else "Não"
+    elif variavel.tipo == variavel.Tipo.DATA:
+        from datetime import date
+
+        try:
+            valor = date.fromisoformat(str(valor)).strftime("%d/%m/%Y")
+        except ValueError:
+            pass
+    if variavel.tipo == variavel.Tipo.NUMERICA and variavel.unidade:
+        valor = f"{valor} {variavel.unidade}"
+    return valor
+
+
+@exige_perfil(Usuario.Perfil.PROFISSIONAL, Usuario.Perfil.PESQUISADOR)
+def lista_voluntarios(request):
+    if request.user.e_pesquisador:
+        participacoes_visiveis = Participacao.objects.filter(estudo__pesquisador=request.user)
+        voluntarios = Voluntario.objects.filter(
+            participacoes__estudo__pesquisador=request.user
+        ).distinct()
+    else:
+        participacoes_visiveis = Participacao.objects.filter(profissional=request.user)
+        voluntarios = Voluntario.objects.filter(
+            Q(criado_por=request.user) | Q(participacoes__profissional=request.user)
+        ).distinct()
+
+    registros = []
+    for voluntario in voluntarios.order_by("-criado_em"):
+        participacoes = list(
+            participacoes_visiveis.filter(voluntario=voluntario)
+            .select_related("estudo")
+            .prefetch_related("dados_utilizados__variavel__dominio__opcoes")
+            .order_by("-criado_em")
+        )
+        for participacao in participacoes:
+            participacao.dados_exibidos = [
+                {
+                    "variavel": dado.variavel.nome,
+                    "valor": formatar_dado_voluntario(dado),
+                    "coletado_em": dado.coletado_em,
+                }
+                for dado in participacao.dados_utilizados.all()
+            ]
+        registros.append({"voluntario": voluntario, "participacoes": participacoes})
+
+    return render(request, "coleta/voluntarios.html", {"registros": registros, "total": len(registros)})

@@ -18,11 +18,11 @@
         <li><strong>Sessão e proteção contra falsificação de solicitações:</strong> cookies técnicos necessários ao funcionamento e à segurança do login.</li>
     </ul>
     <p>Os registros de auditoria não guardam endereço IP, corpo de formulários, senhas, tokens ou valores antigos/novos dos campos. A tela “Minha atividade” mostra os registros associados à própria conta.</p>
-    <p>O cadastro de voluntários e o armazenamento de dados coletados ainda não estão implementados neste projeto. Não use a versão atual para inserir dados de saúde ou outros dados sensíveis de participantes.</p>
+    <p>O sistema permite cadastrar pacientes/voluntários e armazenar respostas de pesquisa. Nome, CPF e valores coletados são mantidos cifrados; um identificador pseudonimizado é usado internamente para localizar registros. O nome pode ser exibido a usuários autorizados e incluído em avisos enviados ao profissional ou pesquisador responsável. Os dados de saúde são sensíveis e o uso com participantes reais depende de definição e aprovação pelo controlador institucional.</p>
 
     <h2 class="h5 mt-4">Base legal, compartilhamento e armazenamento</h2>
     <p>A base legal aplicável deve ser definida pelo controlador para cada finalidade e contexto institucional. A confirmação de leitura deste aviso não substitui essa definição nem representa, por si só, consentimento para qualquer tratamento.</p>
-    <p>O email pode ser enviado ao serviço Brevo quando uma pessoa solicita redefinição de senha. As páginas também carregam o Bootstrap pelo CDN jsDelivr, cujo provedor pode receber dados técnicos de conexão do navegador. O ambiente de desenvolvimento usa um arquivo SQLite local; a política de hospedagem, backups, criptografia em repouso e retenção precisa ser definida pela instituição antes da produção.</p>
+    <p>Emails de redefinição de senha e avisos sobre a coleta podem ser enviados pelo Brevo; os avisos de coleta podem conter o nome do paciente e o estudo relacionado e são destinados ao profissional ou pesquisador responsável. As páginas também carregam o Bootstrap pelo CDN jsDelivr, cujo provedor pode receber dados técnicos de conexão do navegador. O ambiente de desenvolvimento usa um arquivo SQLite local; a política de hospedagem, backups, criptografia em repouso e retenção precisa ser definida pela instituição antes da produção.</p>
     <p>Os registros de auditoria não têm prazo de descarte automático configurado. O controlador deve estabelecer e documentar os prazos de retenção e descarte adequados antes da implantação.</p>
 
     <h2 class="h5 mt-4">Proteções e limites técnicos</h2>
@@ -30,6 +30,7 @@
 
     <h2 class="h5 mt-4">Direitos do titular</h2>
     <p>O titular pode solicitar confirmação e acesso ao tratamento, correção, informação sobre compartilhamentos e demais direitos previstos na LGPD. Os pedidos devem ser encaminhados ao canal de contato acima; se o canal ainda não estiver preenchido, ele precisa ser solicitado à instituição responsável pelo sistema.</p>
+    <p>Usuários autenticados podem excluir a própria conta pela área “Minha conta”. Registros de pesquisa podem ser mantidos conforme a finalidade e os prazos definidos pelo controlador; a conta profissional é desvinculada desses registros. Contas de pesquisadores que ainda sejam responsáveis por estudos precisam ter essa responsabilidade transferida antes da exclusão.</p>
     <p>Consulte também a página oficial da <a href="https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados/direito-dos-titulares" target="_blank" rel="noopener noreferrer">ANPD sobre direitos dos titulares</a> e o <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm" target="_blank" rel="noopener noreferrer">texto da LGPD</a>.</p>
     <p class="small text-secondary mt-4">Última atualização: 15 de outubro de 2026. Leia também os <a href="{% url 'termos_de_uso' %}">termos de uso</a>.</p>
 </article>

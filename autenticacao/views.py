@@ -1,12 +1,12 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from .forms import CadastroForm, LoginForm
+from .forms import CadastroForm, ExcluirContaForm, LoginForm
 from .models import EventoAuditoria, Usuario
 from .permissoes import exige_perfil
 
@@ -91,3 +91,32 @@ def aceitar_documentos(request):
 def minha_atividade(request):
     eventos = EventoAuditoria.objects.filter(usuario=request.user).order_by("-criado_em")[:100]
     return render(request, "autenticacao/minha_atividade.html", {"eventos": eventos})
+
+
+@login_required
+def minha_conta(request):
+    usuario = request.user
+    estudos_vinculados = usuario.estudos.count() if usuario.e_pesquisador else 0
+    form = ExcluirContaForm(
+        usuario=usuario,
+        data=request.POST if request.method == "POST" else None,
+    )
+
+    if request.method == "POST":
+        if estudos_vinculados:
+            messages.error(
+                request,
+                "Esta conta ainda é responsável por estudos. Peça ao administrador para transferir "
+                "a responsabilidade antes de excluir a conta.",
+            )
+        elif form.is_valid():
+            # Registrar logout enquanto a conta ainda existe; depois, remover a conta.
+            logout(request)
+            usuario.delete()
+            messages.success(request, "Sua conta foi excluída.")
+            return redirect("login")
+
+    return render(request, "autenticacao/minha_conta.html", {
+        "form": form,
+        "estudos_vinculados": estudos_vinculados,
+    })

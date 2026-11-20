@@ -1,5 +1,33 @@
 {% extends "autenticacao/base_autenticacao.html" %}
 {% block title %}Entrar | DataCampus{% endblock %}
+{% block classe_area %}login-area{% endblock %}
+{% block classe_cartao %}login-cartao{% endblock %}
+{% block painel_lateral %}
+<section class="login-apresentacao">
+    <a class="login-marca" href="{% url 'login' %}">
+        <span class="login-marca-simbolo">{% include "icones/marca.html" %}</span>
+        <span>DataCampus</span>
+    </a>
+    <p class="login-sobretitulo">Pesquisa em saúde, com organização</p>
+    <h2>Seus estudos.<br>Seus dados.<br>Em um só lugar.</h2>
+    <p class="login-descricao">Organize pesquisas, acompanhe coletas e consulte informações com mais clareza.</p>
+    <div class="login-destaques">
+        <div><span class="login-ponto"></span><span>Estudos e critérios organizados</span></div>
+        <div><span class="login-ponto"></span><span>Acompanhamento das coletas</span></div>
+        <div><span class="login-ponto"></span><span>Dados protegidos e tratados com cuidado</span></div>
+    </div>
+    <div class="login-ilustracao" aria-hidden="true">
+        <div class="login-grafico-cartao">
+            <div class="login-grafico-topo"><span></span><span></span><span></span></div>
+            <div class="login-grafico-titulo"></div>
+            <div class="login-grafico-barras"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="login-grafico-base"><span></span><span></span><span></span></div>
+        </div>
+        <span class="login-orbita login-orbita-um"></span>
+        <span class="login-orbita login-orbita-dois"></span>
+    </div>
+</section>
+{% endblock %}
 {% block cabecalho %}Entrar{% endblock %}
 {% block texto %}Use seu email institucional para continuar.{% endblock %}
 {% block corpo_cartao %}

@@ -38,15 +38,38 @@ Os operadores oferecidos dependem do tipo da variável:
 
 Variável de texto livre não serve de critério e não aparece no seletor. Um critério de data pode ser escrito com dia, só com mês e ano ou só com o ano, e é exibido do mesmo jeito que foi informado.
 
-O banco usado durante o desenvolvimento é SQLite. A migração e a validação do sistema em PostgreSQL ainda precisam ser feitas antes da publicação.
+## Requisitos funcionais e implementação
+
+| Requisito | Implementação no sistema |
+|---|---|
+| RF01 — Cadastro de usuários | `autenticacao/forms.py` e `autenticacao/views.py`: cadastro com perfil, domínio institucional e aceite dos documentos. |
+| RF02 — Autenticação | Login por email e senha com autenticação do Django. |
+| RF03 — Redefinição de senha | Fluxo de redefinição por email integrado ao backend Brevo. |
+| RF04 — Controle de acesso | Decorador `exige_perfil` aplicado às rotas de pesquisador e profissional. |
+| RF05 — Cadastro e edição de estudos | `estudos/forms.py` e views de criação e edição. |
+| RF06 — Consulta de estudos próprios | Lista e detalhe filtrados pelo pesquisador responsável. |
+| RF07 — Busca de variáveis | Seletor por categoria, subcategoria, nome e código. |
+| RF08 — Proposta de variáveis | Formulário que valida e adiciona novas variáveis ao catálogo. |
+| RF09 — Gerenciamento de critérios | Inclusão e remoção de critérios nos estudos do próprio pesquisador. |
+| RF10 — Validação de critérios | Operadores e campos variam pelo tipo da variável; formulários validam valores e períodos. |
+| RF11 — Consulta de atividades | Cada conta consulta os próprios eventos recentes. |
+| RF12 — Auditoria | Middleware e sinais registram acessos e alterações sem gravar valores pessoais. |
+| RF13 — Documentos de privacidade e uso | Páginas públicas, aceite obrigatório e registro da versão aceita. |
+| RF14 — Cadastro de voluntários | Profissional cadastra nome e CPF; nome e CPF ficam cifrados e o CPF é mascarado nas telas. |
+| RF15 — Verificação de elegibilidade | A coleta segue critério por critério e para quando um critério reprova. Dados reaproveitados com autorização são classificados antes de solicitar novas respostas. |
+| RF16 — Consulta de pendências | Profissional consulta participações pendentes dos estudos ativos sob sua responsabilidade. |
+
+Os testes automatizados cobrem os fluxos principais dos 16 RF. O comportamento que a monografia descreve como eliminatório é aplicado no servidor: após a primeira resposta que reprova um critério, a participação fica inelegível e as respostas seguintes não são solicitadas nem gravadas.
+
+O banco usado durante o desenvolvimento é SQLite. O projeto ainda não foi publicado em uma hospedagem.
 
 ## Stack
 
-Django 5.2 no padrão MVT, PostgreSQL (SQLite por enquanto, no desenvolvimento), Bootstrap 5 e pytest. Aplicação monolítica, sem API própria, porque o único cliente é o navegador.
+Django 5.2 no padrão MVT, SQLite, Bootstrap 5 e pytest. Aplicação monolítica, sem API própria, porque o único cliente é o navegador.
 
 O envio de email usa a API transacional do Brevo, com requisição HTTP direta em um backend de email do Django.
 
-Em produção: Render para a aplicação e Neon para o banco.
+Hospedagem planejada: PythonAnywhere, mantendo o banco SQLite.
 
 ## Como executar
 
@@ -114,7 +137,7 @@ Para conferir a sintaxe do remetente, a autenticação da chave e se o remetente
 
 Dois pontos costumam derrubar o envio na primeira tentativa.
 
-Se a conta tiver restrição por IP ativa, o Brevo responde 401 até que o endereço de onde parte a requisição seja autorizado em https://app.brevo.com/security/authorised_ips. Vale para a máquina de desenvolvimento e para o Render, e o endereço IPv6 precisa ser autorizado junto com o IPv4, porque a saída pode usar qualquer um dos dois.
+Se a conta tiver restrição por IP ativa, o Brevo responde 401 até que o endereço de saída da máquina ou da hospedagem seja autorizado em https://app.brevo.com/security/authorised_ips. O endereço usado na hospedagem pode ser diferente do endereço do computador de desenvolvimento.
 
 O endereço em `EMAIL_REMETENTE` precisa estar verificado na conta. Quando não está, a API responde sucesso e descarta a mensagem depois, na fila de envio. Nada aparece no log do servidor nesse caso, e o motivo só é visível no log de eventos da conta, em Transactional, Logs, ou pelo endpoint `GET /v3/smtp/statistics/events`.
 
@@ -141,10 +164,15 @@ Entre pesquisadores, cada um enxerga apenas os próprios estudos. O estudo de ou
 
 ## Testes
 
-pytest, com os testes em arquivos `teste_*.py`.
+Os testes ficam em arquivos `teste_*.py` e cobrem o cadastro, login, aceite dos documentos, exclusão de conta, seleção de variáveis, validação de critérios, proteção de dados, reaproveitamento autorizado, classificação de elegibilidade, interrupção da coleta após reprovação, consultas de pendências e notificações. O relatório exclui testes e migrações da medição e falha se a cobertura do código das aplicações ficar abaixo de 50%.
 
 ```
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe -m pytest
 ```
 
-Os testes atuais, todos em `estudos/teste_seletor_variavel.py`, cobrem a navegação e a busca no seletor de variáveis, a gravação de critérios de data em cada precisão (incluindo a recusa de data que não existe no calendário) e a negativa de acesso ao seletor, tanto para o profissional quanto para o pesquisador que não é dono do estudo. Cadastro, login e as demais telas de estudo ainda estão sem testes.
+Para gerar um relatório HTML detalhado:
+
+```
+.venv\Scripts\python.exe -m pytest --cov-report=html
+```

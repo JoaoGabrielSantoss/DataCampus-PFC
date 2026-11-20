@@ -22,6 +22,16 @@
 
 {% block corpo %}{% endblock %}
 
+<footer class="rodape-datacampus">
+    <div class="rodape-conteudo">
+        <nav class="rodape-links" aria-label="Links legais">
+            <a href="{% url 'termos_de_uso' %}">Termos de uso</a>
+            <a href="{% url 'politica_privacidade' %}">Política de privacidade</a>
+        </nav>
+        <p class="rodape-direitos">© {% now "Y" %} DataCampus · Projeto acadêmico. Todos os direitos reservados.</p>
+    </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 {% block scripts %}{% endblock %}

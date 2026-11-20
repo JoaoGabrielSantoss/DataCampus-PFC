@@ -1,0 +1,66 @@
+{% extends "painel.html" %}
+{% block title %}Voluntários | DataCampus{% endblock %}
+{% block content %}
+<div class="painel-cabecalho">
+  <div>
+    <p class="painel-rotulo">Cadastro e acompanhamento</p>
+    <h1 class="painel-titulo">Voluntários</h1>
+    <p class="painel-abertura">Consulte os voluntários e os dados registrados nas pesquisas que você pode acessar.</p>
+  </div>
+</div>
+
+<div class="painel-indicadores">
+  <div class="painel-indicador">
+    <span class="painel-numero">{{ total }}</span>
+    <span class="painel-legenda">Voluntário{{ total|pluralize }} cadastrado{{ total|pluralize }}</span>
+  </div>
+</div>
+
+<p class="voluntarios-aviso">O CPF fica parcialmente oculto. Os dados de coleta são organizados por pesquisa e respeitam o acesso do seu perfil.</p>
+
+<div class="voluntarios-lista">
+{% for registro in registros %}
+  <article class="voluntario-card">
+    <div class="voluntario-cabecalho">
+      <div>
+        <h2>{{ registro.voluntario.nome_publico }}</h2>
+        <p>CPF: <span class="cpf-mascarado">{{ registro.voluntario.cpf_mascarado }}</span></p>
+      </div>
+      <span class="voluntario-estudos-contagem">{{ registro.participacoes|length }} pesquisa{{ registro.participacoes|length|pluralize }}</span>
+    </div>
+    <dl class="voluntario-dados-pessoais">
+      <div><dt>Cadastrado em</dt><dd>{{ registro.voluntario.criado_em|date:"d/m/Y H:i" }}</dd></div>
+      <div><dt>Autorizou reutilização dos dados</dt><dd>{% if registro.voluntario.autorizou_reuso_em %}Sim{% else %}Não{% endif %}</dd></div>
+    </dl>
+
+    {% if registro.participacoes %}
+      <div class="voluntario-pesquisas">
+        <h3>Pesquisas e dados coletados</h3>
+        {% for participacao in registro.participacoes %}
+          <section class="voluntario-pesquisa">
+            <div class="voluntario-pesquisa-cabecalho">
+              <h4>{{ participacao.estudo.nome }}</h4>
+              <span class="participacao-situacao {{ participacao.situacao }}">{{ participacao.get_situacao_display }}</span>
+            </div>
+            <p class="voluntario-meta">Vinculado em {{ participacao.criado_em|date:"d/m/Y H:i" }} · Atualizado em {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</p>
+            {% if participacao.dados_exibidos %}
+              <dl class="respostas-voluntario">
+                {% for dado in participacao.dados_exibidos %}
+                  <div><dt>{{ dado.variavel }}</dt><dd>{{ dado.valor }}</dd></div>
+                {% endfor %}
+              </dl>
+            {% else %}
+              <p class="voluntario-sem-dados">Ainda não há dados coletados para esta pesquisa.</p>
+            {% endif %}
+          </section>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="voluntario-sem-dados">Este cadastro ainda não tem pesquisas vinculadas que você possa consultar.</p>
+    {% endif %}
+  </article>
+{% empty %}
+  <p class="painel-vazio">Não há voluntários disponíveis para exibir neste perfil.</p>
+{% endfor %}
+</div>
+{% endblock %}

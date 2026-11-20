@@ -5,9 +5,9 @@ from .models import DadoColetado, Participacao, Voluntario
 
 @admin.register(Voluntario)
 class VoluntarioAdmin(admin.ModelAdmin):
-    list_display = ("codigo_publico", "criado_em", "autorizou_reuso_em")
+    list_display = ("nome_publico", "criado_em", "autorizou_reuso_em")
     search_fields = ("identificador",)
-    readonly_fields = ("identificador", "cpf_cifrado", "criado_em", "criado_por")
+    readonly_fields = ("identificador", "nome_cifrado", "cpf_cifrado", "criado_em", "criado_por")
 
 
 @admin.register(DadoColetado)

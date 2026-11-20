@@ -3,18 +3,21 @@
 {% block content %}
 <div class="painel-cabecalho"><div>
   <p class="painel-rotulo">{{ participacao.estudo.nome }}</p>
-  <h1 class="painel-titulo">{{ participacao.voluntario.codigo_publico }}</h1>
-  <p class="painel-abertura">{% if pesquisador %}Situação: {{ participacao.get_situacao_display }}{% elif pendentes %}Há dados para preencher.{% else %}Não há dados pendentes para este estudo.{% endif %}</p>
+  <h1 class="painel-titulo">{{ participacao.voluntario.nome_publico }}</h1>
+  <p class="painel-abertura">{% if pesquisador %}Situação: {{ participacao.get_situacao_display }}{% elif encerrada_por_inelegibilidade %}A coleta foi encerrada para este estudo.{% elif pode_coletar %}Há dados para preencher.{% else %}Não há dados pendentes para este estudo.{% endif %}</p>
 </div></div>
-{% if pendentes %}
+{% if encerrada_por_inelegibilidade %}
+<p class="painel-vazio">A coleta deste estudo foi encerrada.</p>
+{% elif pode_coletar %}
 <form class="painel-formulario" method="post">
   {% csrf_token %}
+  <p class="painel-abertura">Pergunta {{ passo_atual }} de {{ total_criterios }}</p>
   {% for field in form %}<div class="mb-3">
     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
     {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
   </div>{% endfor %}
   <div class="painel-formulario-acoes"><button class="painel-acao" type="submit">Salvar dados</button></div>
 </form>
-{% else %}<p class="painel-vazio">Todos os campos necessários para este estudo já foram preenchidos.</p>{% endif %}
+{% elif not pesquisador %}<p class="painel-vazio">Todos os campos necessários para este estudo já foram preenchidos.</p>{% endif %}
 {% if pesquisador %}<a class="painel-voltar" href="{% url 'coleta:painel_estudo' participacao.estudo.id %}">Voltar ao painel do estudo</a>{% endif %}
 {% endblock %}

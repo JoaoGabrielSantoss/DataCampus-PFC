@@ -1,10 +1,11 @@
 {% extends "documento.html" %}
 {% block classe_corpo %}acesso{% endblock %}
 {% block corpo %}
-<main class="acesso-area">
-    <div class="acesso-cartao">
+<main class="acesso-area {% block classe_area %}{% endblock %}">
+    {% block painel_lateral %}{% endblock %}
+    <div class="acesso-cartao {% block classe_cartao %}{% endblock %}">
         <a class="acesso-marca" href="{% url 'login' %}">
-            <span class="acesso-marca-sigla">D</span>
+            <span class="acesso-marca-sigla">{% include "icones/marca.html" %}</span>
             <span>DataCampus</span>
         </a>
         <p class="acesso-rotulo">{% block rotulo %}Coleta de dados de pesquisa{% endblock %}</p>
@@ -12,11 +13,6 @@
         <p class="acesso-texto">{% block texto %}{% endblock %}</p>
         {% block corpo_cartao %}{% endblock %}
     </div>
-    <p class="acesso-rodape">
-        <a href="{% url 'politica_privacidade' %}">Privacidade</a>
-        <span aria-hidden="true">·</span>
-        <a href="{% url 'termos_de_uso' %}">Termos de uso</a>
-    </p>
 </main>
 <script>
     document.querySelectorAll(".olho").forEach(function (botao) {

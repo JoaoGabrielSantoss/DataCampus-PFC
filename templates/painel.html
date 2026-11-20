@@ -9,7 +9,7 @@
 <header class="painel-topo">
 
     <a class="painel-marca" href="{% url 'inicio' %}">
-        <span class="painel-marca-sigla">D</span>
+        <span class="painel-marca-sigla">{% include "icones/marca.html" %}</span>
         <span>DataCampus</span>
     </a>
 
@@ -44,6 +44,11 @@
                 <span>Estudos</span>
             </a>
 
+            <a class="painel-item {% if rota == 'lista_voluntarios' %}ativo{% endif %}" href="{% url 'coleta:lista_voluntarios' %}">
+                {% include "icones/icone.html" with nome="conta" %}
+                <span>Voluntários</span>
+            </a>
+
         {% else %}
 
             <a class="painel-item {% if rota == 'coleta' %}ativo{% endif %}" href="{% url 'coleta' %}">
@@ -56,11 +61,21 @@
                 <span>Pendências</span>
             </a>
 
+            <a class="painel-item {% if rota == 'lista_voluntarios' %}ativo{% endif %}" href="{% url 'coleta:lista_voluntarios' %}">
+                {% include "icones/icone.html" with nome="conta" %}
+                <span>Voluntários</span>
+            </a>
+
         {% endif %}
 
         <a class="painel-item {% if rota == 'minha_atividade' %}ativo{% endif %}" href="{% url 'minha_atividade' %}">
             <span aria-hidden="true">◷</span>
             <span>Minha atividade</span>
+        </a>
+
+        <a class="painel-item {% if rota == 'minha_conta' %}ativo{% endif %}" href="{% url 'minha_conta' %}">
+            {% include "icones/icone.html" with nome="conta" %}
+            <span>Minha conta</span>
         </a>
 
     </nav>

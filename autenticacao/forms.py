@@ -73,3 +73,32 @@ class SolicitarSenhaForm(EstiloBootstrapMixin, PasswordResetForm):
 
 class NovaSenhaForm(EstiloBootstrapMixin, SetPasswordForm):
     pass
+
+
+class ExcluirContaForm(EstiloBootstrapMixin, forms.Form):
+    senha_atual = forms.CharField(
+        label="Senha atual",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
+    )
+    confirmacao = forms.CharField(
+        label='Digite "EXCLUIR" para confirmar',
+        strip=True,
+        widget=forms.TextInput(attrs={"autocomplete": "off", "spellcheck": "false"}),
+    )
+
+    def __init__(self, *args, usuario, **kwargs):
+        self.usuario = usuario
+        super().__init__(*args, **kwargs)
+
+    def clean_senha_atual(self):
+        senha = self.cleaned_data["senha_atual"]
+        if not self.usuario.check_password(senha):
+            raise forms.ValidationError("A senha atual não confere.")
+        return senha
+
+    def clean_confirmacao(self):
+        confirmacao = self.cleaned_data["confirmacao"]
+        if confirmacao != "EXCLUIR":
+            raise forms.ValidationError('Digite exatamente "EXCLUIR" para confirmar.')
+        return confirmacao

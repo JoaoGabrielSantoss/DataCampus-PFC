@@ -2,7 +2,10 @@
 {% block corpo %}
     <header class="navbar border-bottom bg-white">
         <div class="container py-2 d-flex flex-wrap gap-2 align-items-center">
-            <a class="navbar-brand fw-semibold me-auto" href="{% if user.is_authenticated %}{% url 'inicio' %}{% else %}{% url 'login' %}{% endif %}">DataCampus</a>
+            <a class="navbar-brand fw-semibold me-auto" href="{% if user.is_authenticated %}{% url 'inicio' %}{% else %}{% url 'login' %}{% endif %}">
+                <span class="marca-simbolo">{% include "icones/marca.html" %}</span>
+                <span>DataCampus</span>
+            </a>
             {% if user.is_authenticated %}
                 <nav class="d-flex flex-wrap gap-3 me-3 small">
                     {% if user.e_profissional %}
@@ -36,13 +39,4 @@
 
     <main>{% block content %}{% endblock %}</main>
 
-    <footer class="border-top mt-5">
-        <div class="container py-4 small text-secondary d-flex flex-wrap gap-3 justify-content-between">
-            <span>DataCampus, Projeto Final de Curso em Sistemas de Informação, Universidade de Mogi das Cruzes.</span>
-            <span class="d-flex flex-wrap gap-3">
-                <a href="{% url 'politica_privacidade' %}" class="text-secondary">Privacidade</a>
-                <a href="{% url 'termos_de_uso' %}" class="text-secondary">Termos de uso</a>
-            </span>
-        </div>
-    </footer>
 {% endblock %}

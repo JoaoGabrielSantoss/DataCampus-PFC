@@ -9,7 +9,8 @@ from .seguranca import validar_cpf
 
 class RegistroParticipacaoForm(forms.Form):
     estudo = forms.ModelChoiceField(queryset=Estudo.objects.none(), label="Estudo")
-    cpf = forms.CharField(label="CPF do voluntário", max_length=18)
+    nome = forms.CharField(label="Nome completo do paciente", max_length=150)
+    cpf = forms.CharField(label="CPF do paciente", max_length=18)
     autorizado_reuso = forms.BooleanField(
         label="O voluntário autorizou o uso dos dados em outros estudos",
         required=False,
@@ -24,6 +25,12 @@ class RegistroParticipacaoForm(forms.Form):
 
     def clean_cpf(self):
         return validar_cpf(self.cleaned_data["cpf"])
+
+    def clean_nome(self):
+        nome = " ".join(self.cleaned_data["nome"].split())
+        if len(nome) < 2:
+            raise ValidationError("Informe o nome completo do paciente.")
+        return nome
 
     def clean_estudo(self):
         estudo = self.cleaned_data["estudo"]

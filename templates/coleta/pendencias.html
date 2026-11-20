@@ -6,7 +6,7 @@
 <div class="painel-lista">
 {% for participacao in participacoes %}<a class="painel-linha" href="{% url 'coleta:participacao' participacao.id %}">
   <span class="painel-linha-icone" aria-hidden="true">◷</span><span class="painel-linha-texto">
-  <strong>{{ participacao.estudo.nome }}</strong><span class="painel-linha-sub">{{ participacao.voluntario.codigo_publico }} · Atualizado {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</span></span>
+  <strong>{{ participacao.estudo.nome }}</strong><span class="painel-linha-sub">{{ participacao.voluntario.nome_publico }} · Atualizado {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</span></span>
 </a>{% empty %}<p class="painel-vazio">Não há pendências de coleta no momento.</p>{% endfor %}
 </div>
 {% endblock %}
