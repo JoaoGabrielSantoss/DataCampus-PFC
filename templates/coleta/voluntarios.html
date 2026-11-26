@@ -5,7 +5,7 @@
   <div>
     <p class="painel-rotulo">Cadastro e acompanhamento</p>
     <h1 class="painel-titulo">Voluntários</h1>
-    <p class="painel-abertura">Consulte os voluntários e os dados registrados nas pesquisas que você pode acessar.</p>
+    <p class="painel-abertura">Consulte os voluntários cadastrados e veja a quais pesquisas estão vinculados.</p>
   </div>
 </div>
 
@@ -16,7 +16,7 @@
   </div>
 </div>
 
-<p class="voluntarios-aviso">O CPF fica parcialmente oculto. Os dados de coleta são organizados por pesquisa e respeitam o acesso do seu perfil.</p>
+<p class="voluntarios-aviso">O CPF fica parcialmente oculto. Profissionais podem consultar os vínculos dos voluntários com as pesquisas; as respostas detalhadas só aparecem para quem tem acesso àquela coleta.</p>
 
 <div class="voluntarios-lista">
 {% for registro in registros %}
@@ -28,14 +28,16 @@
       </div>
       <span class="voluntario-estudos-contagem">{{ registro.participacoes|length }} pesquisa{{ registro.participacoes|length|pluralize }}</span>
     </div>
-    <dl class="voluntario-dados-pessoais">
-      <div><dt>Cadastrado em</dt><dd>{{ registro.voluntario.criado_em|date:"d/m/Y H:i" }}</dd></div>
-      <div><dt>Autorizou reutilização dos dados</dt><dd>{% if registro.voluntario.autorizou_reuso_em %}Sim{% else %}Não{% endif %}</dd></div>
-    </dl>
+    {% if registro.pode_ver_cadastro %}
+      <dl class="voluntario-dados-pessoais">
+        <div><dt>Cadastrado em</dt><dd>{{ registro.voluntario.criado_em|date:"d/m/Y H:i" }}</dd></div>
+        <div><dt>Autorizou reutilização dos dados</dt><dd>{% if registro.voluntario.autorizou_reuso_em %}Sim{% else %}Não{% endif %}</dd></div>
+      </dl>
+    {% endif %}
 
     {% if registro.participacoes %}
       <div class="voluntario-pesquisas">
-        <h3>Pesquisas e dados coletados</h3>
+        <h3>Pesquisas associadas</h3>
         {% for participacao in registro.participacoes %}
           <section class="voluntario-pesquisa">
             <div class="voluntario-pesquisa-cabecalho">
@@ -43,14 +45,18 @@
               <span class="participacao-situacao {{ participacao.situacao }}">{{ participacao.get_situacao_display }}</span>
             </div>
             <p class="voluntario-meta">Vinculado em {{ participacao.criado_em|date:"d/m/Y H:i" }} · Atualizado em {{ participacao.atualizado_em|date:"d/m/Y H:i" }}</p>
-            {% if participacao.dados_exibidos %}
-              <dl class="respostas-voluntario">
-                {% for dado in participacao.dados_exibidos %}
-                  <div><dt>{{ dado.variavel }}</dt><dd>{{ dado.valor }}</dd></div>
-                {% endfor %}
-              </dl>
+            {% if participacao.pode_ver_dados %}
+              {% if participacao.dados_exibidos %}
+                <dl class="respostas-voluntario">
+                  {% for dado in participacao.dados_exibidos %}
+                    <div><dt>{{ dado.variavel }}</dt><dd>{{ dado.valor }}</dd></div>
+                  {% endfor %}
+                </dl>
+              {% else %}
+                <p class="voluntario-sem-dados">Ainda não há dados coletados para esta pesquisa.</p>
+              {% endif %}
             {% else %}
-              <p class="voluntario-sem-dados">Ainda não há dados coletados para esta pesquisa.</p>
+              <p class="voluntario-sem-dados">As respostas desta coleta não estão disponíveis para seu perfil.</p>
             {% endif %}
           </section>
         {% endfor %}

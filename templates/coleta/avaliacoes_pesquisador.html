@@ -1,0 +1,23 @@
+{% extends "painel.html" %}
+{% block title %}Avaliações dos voluntários | DataCampus{% endblock %}
+{% block content %}
+<div class="painel-cabecalho">
+  <div><p class="painel-rotulo">Retorno dos participantes</p><h1 class="painel-titulo">Avaliações</h1><p class="painel-abertura">Notas e comentários anônimos das pessoas que participaram dos seus estudos.</p></div>
+</div>
+<div class="painel-indicadores">
+  <div class="painel-indicador"><span class="painel-numero">{% if total %}{{ media_pesquisador|floatformat:1 }}{% else %}—{% endif %}</span><span class="painel-legenda">Sua média como pesquisador (0–5)</span></div>
+  <div class="painel-indicador"><span class="painel-numero">{% if total %}{{ media_pesquisa|floatformat:1 }}{% else %}—{% endif %}</span><span class="painel-legenda">Média das suas pesquisas (0–5)</span></div>
+  <div class="painel-indicador"><span class="painel-numero">{{ total }}</span><span class="painel-legenda">Avaliação{{ total|pluralize }} recebida{{ total|pluralize }}</span></div>
+</div>
+<div class="painel-secao"><h2 class="painel-secao-titulo">Notas e comentários</h2><span class="painel-secao-contagem">{{ total }}</span></div>
+<div class="painel-lista painel-lista-avaliacoes">
+  {% for avaliacao in avaliacoes %}
+    <article class="painel-avaliacao-card">
+      <div class="painel-avaliacao-topo"><strong>{{ avaliacao.participacao.estudo.nome }}</strong><time>{{ avaliacao.atualizado_em|date:"d/m/Y H:i" }}</time></div>
+      <p><span>Pesquisa</span> <strong>{{ avaliacao.nota_estudo }}/5</strong><span class="painel-estrelas" aria-label="{{ avaliacao.nota_estudo }} de 5 estrelas">{% if avaliacao.nota_estudo %}{{ avaliacao.nota_estudo }} ★{% else %}0 estrelas{% endif %}</span></p>
+      <p><span>Pesquisador</span> <strong>{{ avaliacao.nota_pesquisador }}/5</strong><span class="painel-estrelas" aria-label="{{ avaliacao.nota_pesquisador }} de 5 estrelas">{% if avaliacao.nota_pesquisador %}{{ avaliacao.nota_pesquisador }} ★{% else %}0 estrelas{% endif %}</span></p>
+      {% if avaliacao.comentario %}<blockquote>{{ avaliacao.comentario }}</blockquote>{% else %}<p class="painel-sem-comentario">O voluntário não deixou comentário.</p>{% endif %}
+    </article>
+  {% empty %}<p class="painel-vazio">Você ainda não recebeu avaliações.</p>{% endfor %}
+</div>
+{% endblock %}

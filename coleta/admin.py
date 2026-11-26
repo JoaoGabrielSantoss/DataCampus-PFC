@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from .models import DadoColetado, Participacao, Voluntario
+from .models import AvaliacaoParticipacao, DadoColetado, Participacao, Voluntario
 
 
 @admin.register(Voluntario)
 class VoluntarioAdmin(admin.ModelAdmin):
     list_display = ("nome_publico", "criado_em", "autorizou_reuso_em")
     search_fields = ("identificador",)
-    readonly_fields = ("identificador", "nome_cifrado", "cpf_cifrado", "criado_em", "criado_por")
+    readonly_fields = ("identificador", "nome_cifrado", "cpf_cifrado", "email_cifrado", "criado_em", "criado_por")
 
 
 @admin.register(DadoColetado)
@@ -21,3 +21,11 @@ class ParticipacaoAdmin(admin.ModelAdmin):
     list_display = ("estudo", "voluntario", "situacao", "atualizado_em")
     list_filter = ("situacao", "estudo__situacao")
     readonly_fields = ("criado_em", "atualizado_em")
+
+
+@admin.register(AvaliacaoParticipacao)
+class AvaliacaoParticipacaoAdmin(admin.ModelAdmin):
+    list_display = ("participacao", "nota_estudo", "nota_pesquisador", "atualizado_em")
+    readonly_fields = ("participacao", "nota_estudo", "nota_pesquisador", "comentario", "atualizado_em")
+
+

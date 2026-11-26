@@ -49,6 +49,11 @@
                 <span>Voluntários</span>
             </a>
 
+            <a class="painel-item {% if rota == 'avaliacoes_pesquisador' %}ativo{% endif %}" href="{% url 'coleta:avaliacoes_pesquisador' %}">
+                <span aria-hidden="true">★</span>
+                <span>Avaliações</span>
+            </a>
+
         {% else %}
 
             <a class="painel-item {% if rota == 'coleta' %}ativo{% endif %}" href="{% url 'coleta' %}">

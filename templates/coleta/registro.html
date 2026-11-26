@@ -3,12 +3,12 @@
 {% block content %}
 <div class="painel-cabecalho">
   <div><p class="painel-rotulo">Coleta de dados de pesquisa</p><h1 class="painel-titulo">Registrar participação</h1>
-  <p class="painel-abertura">Escolha o estudo e informe o nome e o CPF do paciente.</p></div>
+  <p class="painel-abertura">Escolha o estudo e informe os dados do voluntário. O e-mail é opcional.</p></div>
 </div>
-<form class="painel-formulario" method="post">
+<form class="painel-formulario cadastro-voluntario-form" method="post">
   {% csrf_token %}
-  {% for field in form %}<div class="mb-3">
-    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+  {% for field in form %}<div class="cadastro-voluntario-campo{% if field.name == 'autorizado_reuso' %} cadastro-voluntario-consentimento{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
     {% if field.help_text %}<div class="ajuda-campo">{{ field.help_text }}</div>{% endif %}
     {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
   </div>{% endfor %}

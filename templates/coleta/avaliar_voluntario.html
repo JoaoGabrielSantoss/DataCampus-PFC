@@ -1,0 +1,25 @@
+{% extends "documento.html" %}
+{% block title %}Avaliar pesquisa | DataCampus{% endblock %}
+{% block classe_corpo %}portal-voluntario{% endblock %}
+{% block corpo %}
+<header class="portal-topo">
+  <a class="portal-marca" href="{% url 'coleta:perfil_voluntario' %}"><span class="marca-simbolo">{% include "icones/marca.html" %}</span> DataCampus</a>
+  <a href="{% url 'coleta:perfil_voluntario' %}">Minhas pesquisas</a>
+</header>
+{% if messages %}<div class="portal-mensagens">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+<main class="portal-conteudo">
+  <section class="portal-cartao portal-avaliacao-form">
+    <p class="painel-rotulo">{{ participacao.estudo.condicao }}</p>
+    <h1 class="painel-titulo">{{ participacao.estudo.nome }}</h1>
+    <p class="painel-abertura">Pesquisador responsável: {{ participacao.estudo.pesquisador.nome_completo }}</p>
+    <form method="post" class="portal-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      <fieldset class="portal-campo-estrelas"><legend>{{ form.nota_estudo.label }}</legend><p>Escolha de 0 a 5 estrelas.</p>{{ form.nota_estudo }}{% for error in form.nota_estudo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</fieldset>
+      <fieldset class="portal-campo-estrelas"><legend>{{ form.nota_pesquisador.label }}</legend><p>Escolha de 0 a 5 estrelas.</p>{{ form.nota_pesquisador }}{% for error in form.nota_pesquisador.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</fieldset>
+      <div><label for="{{ form.comentario.id_for_label }}">{{ form.comentario.label }}</label>{{ form.comentario }}<p class="portal-privacidade">{{ form.comentario.help_text }} O comentário será exibido ao pesquisador responsável, sem seu nome.</p>{% for error in form.comentario.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="portal-acoes"><button class="painel-acao" type="submit">Salvar avaliação</button><a class="portal-voltar" href="{% url 'coleta:perfil_voluntario' %}">Cancelar</a></div>
+    </form>
+  </section>
+</main>
+{% endblock %}

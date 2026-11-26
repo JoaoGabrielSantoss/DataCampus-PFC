@@ -1,36 +1,82 @@
 {% extends "painel.html" %}
-{% block title %}Início | DataCampus{% endblock %}
+{% load static %}
+{% block title %}Painel | DataCampus{% endblock %}
 {% block content %}
-<div class="painel-cabecalho">
-    <div>
-        <p class="painel-rotulo">Coleta de dados de pesquisa</p>
-        <h1 class="painel-titulo">Olá, {{ user.nome_completo }}</h1>
+<section class="dashboard">
+    <header class="dashboard-cabecalho">
+        <div>
+            <p class="painel-rotulo">PAINEL DE ACOMPANHAMENTO</p>
+            <h1 class="painel-titulo">Olá, {{ user.nome_completo }}</h1>
+            <p class="dashboard-descricao">
+                {% if is_pesquisador %}Visão geral dos estudos sob sua responsabilidade.{% else %}Acompanhe as coletas que você realizou.{% endif %}
+                Os gráficos mostram apenas dados agregados de participação e elegibilidade.
+            </p>
+        </div>
+        <form class="dashboard-filtros" method="get" aria-label="Filtros do painel">
+            <label>Período
+                <select name="periodo">
+                    {% for valor, rotulo in periodos %}<option value="{{ valor }}" {% if periodo == valor %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>Pesquisa
+                <select name="estudo">
+                    <option value="">Todas as pesquisas</option>
+                    {% for estudo in estudos %}<option value="{{ estudo.pk }}" {% if estudo_selecionado == estudo.pk|stringformat:"s" %}selected{% endif %}>{{ estudo.nome }}</option>{% endfor %}
+                </select>
+            </label>
+            {% if situacao_selecionada %}<input type="hidden" name="situacao" value="{{ situacao_selecionada }}">{% endif %}
+            <button type="submit" class="botao botao-primario">Aplicar</button>
+        </form>
+    </header>
+
+    <div class="dashboard-indicadores">
+        <article class="dashboard-indicador indicador-destaque"><span>Participações no período</span><strong>{{ total_participacoes }}</strong><small>{{ periodo_legenda }}</small></article>
+        <article class="dashboard-indicador"><span>Voluntários</span><strong>{{ total_voluntarios }}</strong><small>Com participação no filtro atual</small></article>
+        {% if is_pesquisador %}
+        <article class="dashboard-indicador"><span>Pesquisas ativas</span><strong>{{ estudos_ativos }}</strong><small>{{ total_estudos }} no total</small></article>
+        {% else %}
+        <article class="dashboard-indicador"><span>Pesquisas atendidas</span><strong>{{ total_estudos }}</strong><small>Com coletas atribuídas a você</small></article>
+        {% endif %}
+        <article class="dashboard-indicador"><span>Pendentes</span><strong>{{ pendentes }}</strong><small>Aguardam respostas de critérios</small></article>
     </div>
-</div>
 
-<p class="painel-abertura">
-    {% if user.e_pesquisador %}
-        Seu acesso é de pesquisador. Você cadastra os estudos e os critérios de elegibilidade de cada um.
-    {% else %}
-        Seu acesso é de profissional de coleta. Você registra os dados dos voluntários e acompanha o que falta preencher.
-    {% endif %}
-</p>
+    <div class="dashboard-graficos">
+        <article class="dashboard-card dashboard-card-amplo">
+            <div class="dashboard-card-titulo"><div><h2>Participações ao longo do tempo</h2><p>Novos vínculos por mês, nos últimos 12 meses</p></div><span class="dashboard-unidade">participações</span></div>
+            <div class="grafico-linha-wrap"><svg id="grafico-tendencia" class="grafico-linha" viewBox="0 0 720 250" role="img" aria-label="Gráfico de participações por mês"></svg></div>
+        </article>
+        <article class="dashboard-card">
+            <div class="dashboard-card-titulo"><div><h2>Situação das participações</h2><p>Clique em uma situação para filtrar a lista</p></div></div>
+            <div id="grafico-situacoes" class="grafico-situacoes"></div>
+            <div class="dashboard-legenda"><span><i class="legenda-elegivel"></i>Elegíveis: {{ elegiveis }}</span><span><i class="legenda-pendente"></i>Pendentes: {{ pendentes }}</span><span><i class="legenda-inelegivel"></i>Inelegíveis: {{ inelegiveis }}</span></div>
+        </article>
+        <article class="dashboard-card dashboard-card-amplo">
+            <div class="dashboard-card-titulo"><div><h2>Pesquisas com mais participações</h2><p>Clique em uma barra para ver uma pesquisa específica</p></div></div>
+            <div id="grafico-estudos" class="grafico-barras"></div>
+        </article>
+        <article class="dashboard-card dashboard-card-acoes">
+            <div class="dashboard-card-titulo"><div><h2>Atalhos</h2><p>Acesse as tarefas mais usadas</p></div></div>
+            {% if is_pesquisador %}
+                <a class="dashboard-atalho" href="{% url 'estudos:listar' %}">Gerenciar pesquisas <span>→</span></a>
+                <a class="dashboard-atalho" href="{% url 'coleta:lista_voluntarios' %}">Ver voluntários <span>→</span></a>
+                <a class="dashboard-atalho" href="{% url 'coleta:avaliacoes_pesquisador' %}">Avaliações e comentários <span>→</span></a>
+            {% else %}
+                <a class="dashboard-atalho" href="{% url 'coleta' %}">Registrar uma coleta <span>→</span></a>
+                <a class="dashboard-atalho" href="{% url 'pendencias' %}">Consultar pendências <span>→</span></a>
+                <a class="dashboard-atalho" href="{% url 'coleta:lista_voluntarios' %}">Ver voluntários <span>→</span></a>
+            {% endif %}
+        </article>
+    </div>
 
-<div class="painel-atalhos">
-    {% if user.e_pesquisador %}
-        <a class="painel-atalho" href="{% url 'estudos:listar' %}">
-            <strong>Estudos</strong>
-            <span>Cadastro de cada estudo e dos critérios de elegibilidade que ele exige.</span>
-        </a>
-    {% else %}
-        <a class="painel-atalho" href="{% url 'coleta' %}">
-            <strong>Registro de dados</strong>
-            <span>Preenchimento das variáveis exigidas pelo estudo.</span>
-        </a>
-        <a class="painel-atalho" href="{% url 'pendencias' %}">
-            <strong>Pendências</strong>
-            <span>O que falta coletar, por voluntário.</span>
-        </a>
-    {% endif %}
-</div>
+    <section class="dashboard-recentes">
+        <div class="dashboard-card-titulo"><div><h2>Participações recentes</h2><p>Use os gráficos ou filtros para explorar os registros</p></div><span class="dashboard-unidade">{{ recentes|length }} exibidas</span></div>
+        {% if recentes %}
+        <div class="dashboard-tabela-wrap"><table class="dashboard-tabela"><thead><tr><th>Voluntário</th><th>Pesquisa</th><th>Situação</th><th>Data</th><th></th></tr></thead><tbody>
+            {% for item in recentes %}<tr><td>{{ item.voluntario.nome_publico }}</td><td>{{ item.estudo.nome }}</td><td><span class="status-chip status-{{ item.situacao }}">{{ item.get_situacao_display }}</span></td><td>{{ item.criado_em|date:"d/m/Y" }}</td><td><a href="{% url 'coleta:participacao' item.pk %}" aria-label="Abrir participação">Abrir →</a></td></tr>{% endfor %}
+        </tbody></table></div>
+        {% else %}<div class="dashboard-vazio">Nenhuma participação encontrada com os filtros atuais.</div>{% endif %}
+    </section>
+</section>
+{{ chart_data|json_script:"dashboard-data" }}
+<script src="{% static 'js/dashboard.js' %}" defer></script>
 {% endblock %}

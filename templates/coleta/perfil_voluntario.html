@@ -1,0 +1,30 @@
+{% extends "documento.html" %}
+{% block title %}Minhas pesquisas | DataCampus{% endblock %}
+{% block classe_corpo %}portal-voluntario{% endblock %}
+{% block corpo %}
+<header class="portal-topo">
+  <a class="portal-marca" href="{% url 'coleta:perfil_voluntario' %}"><span class="marca-simbolo">{% include "icones/marca.html" %}</span> DataCampus</a>
+  <form method="post" action="{% url 'coleta:sair_voluntario' %}">{% csrf_token %}<button class="portal-sair" type="submit">Sair</button></form>
+</header>
+{% if messages %}<div class="portal-mensagens">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+<main class="portal-conteudo portal-perfil">
+  <p class="painel-rotulo">Área do voluntário</p>
+  <h1 class="painel-titulo">Olá, {{ voluntario.nome_publico }}</h1>
+  <p class="painel-abertura">Aqui estão suas pesquisas ativas. Você pode avaliar a pesquisa e deixar uma mensagem privada para o pesquisador responsável.</p>
+  <div class="portal-lista">
+    {% for participacao in participacoes %}
+      <article class="portal-cartao portal-estudo">
+        <div class="portal-estudo-topo"><div><span class="portal-condicao">{{ participacao.estudo.condicao }}</span><h2>{{ participacao.estudo.nome }}</h2></div><span class="participacao-situacao {{ participacao.situacao }}">{{ participacao.get_situacao_display }}</span></div>
+        <p class="portal-pesquisador"><strong>Pesquisador responsável:</strong> {{ participacao.estudo.pesquisador.nome_completo }}</p>
+        {% if participacao.avaliacao %}
+          <p class="portal-avaliacao-salva">Sua avaliação: pesquisa {{ participacao.avaliacao.nota_estudo }}/5 · pesquisador {{ participacao.avaliacao.nota_pesquisador }}/5</p>
+          {% if participacao.avaliacao.comentario %}<blockquote class="portal-comentario">“{{ participacao.avaliacao.comentario }}”</blockquote>{% endif %}
+        {% endif %}
+        <a class="painel-acao" href="{% url 'coleta:avaliar_voluntario' participacao.id %}">{% if participacao.avaliacao %}Editar avaliação{% else %}Avaliar pesquisa e pesquisador{% endif %}</a>
+      </article>
+    {% empty %}
+      <section class="portal-cartao portal-vazio"><h2>Nenhuma pesquisa ativa</h2><p>Não encontramos pesquisas ativas vinculadas ao seu acesso.</p></section>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

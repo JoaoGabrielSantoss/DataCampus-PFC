@@ -11,6 +11,7 @@ class RegistroParticipacaoForm(forms.Form):
     estudo = forms.ModelChoiceField(queryset=Estudo.objects.none(), label="Estudo")
     nome = forms.CharField(label="Nome completo do paciente", max_length=150)
     cpf = forms.CharField(label="CPF do paciente", max_length=18)
+    email = forms.EmailField(label="E-mail do voluntário (opcional)", max_length=254, required=False)
     autorizado_reuso = forms.BooleanField(
         label="O voluntário autorizou o uso dos dados em outros estudos",
         required=False,
@@ -31,6 +32,9 @@ class RegistroParticipacaoForm(forms.Form):
         if len(nome) < 2:
             raise ValidationError("Informe o nome completo do paciente.")
         return nome
+
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()
 
     def clean_estudo(self):
         estudo = self.cleaned_data["estudo"]
@@ -88,3 +92,33 @@ class ValoresColetaForm(forms.Form):
                 if variavel.maximo is not None and valor > variavel.maximo:
                     self.add_error(self.chave(variavel), f"O valor máximo é {variavel.maximo}.")
         return dados
+
+
+class AcessoVoluntarioForm(forms.Form):
+    cpf = forms.CharField(label="CPF cadastrado", max_length=18)
+
+    def clean_cpf(self):
+        return validar_cpf(self.cleaned_data["cpf"])
+
+
+class AvaliacaoVoluntarioForm(forms.Form):
+    ESCOLHAS_ESTRELAS = [(n, "0" if n == 0 else "★" * n) for n in range(6)]
+    nota_estudo = forms.TypedChoiceField(
+        label="Como você avalia esta pesquisa?",
+        choices=ESCOLHAS_ESTRELAS,
+        coerce=int,
+        widget=forms.RadioSelect,
+    )
+    nota_pesquisador = forms.TypedChoiceField(
+        label="Como você avalia o pesquisador responsável?",
+        choices=ESCOLHAS_ESTRELAS,
+        coerce=int,
+        widget=forms.RadioSelect,
+    )
+    comentario = forms.CharField(
+        label="Comentário para o pesquisador",
+        max_length=1000,
+        required=False,
+        help_text="Opcional. Não inclua informações de saúde nem dados pessoais neste comentário.",
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "Compartilhe sua experiência (opcional)."}),
+    )

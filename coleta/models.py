@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .seguranca import cifrar, decifrar
@@ -9,6 +10,7 @@ class Voluntario(models.Model):
     identificador = models.CharField("identificador pseudonimizado", max_length=64, unique=True)
     nome_cifrado = models.TextField("nome cifrado", blank=True, default="")
     cpf_cifrado = models.TextField("CPF cifrado")
+    email_cifrado = models.TextField("e-mail cifrado", blank=True, default="")
     autorizou_reuso_em = models.DateTimeField("autorização de reuso registrada em", null=True, blank=True)
     criado_em = models.DateTimeField("cadastrado em", auto_now_add=True)
     criado_por = models.ForeignKey(
@@ -43,18 +45,22 @@ class Voluntario(models.Model):
     def obter_cpf(self):
         return decifrar(self.cpf_cifrado)
 
+    def obter_email(self):
+        return decifrar(self.email_cifrado) if self.email_cifrado else ""
+
     @property
     def cpf_mascarado(self):
         cpf = self.obter_cpf()
         return f"***.***.***-{cpf[-2:]}" if len(cpf) == 11 else "***.***.***-**"
 
     @classmethod
-    def registrar(cls, cpf, *, nome, autorizado_reuso, usuario):
+    def registrar(cls, cpf, *, nome, email="", autorizado_reuso, usuario):
         from django.utils import timezone
 
         from .seguranca import identificador_cpf, validar_cpf
 
         nome_limpo = " ".join((nome or "").split())
+        email_limpo = (email or "").strip().lower()
         if len(nome_limpo) < 2:
             raise ValidationError("Informe o nome completo do paciente.")
         cpf_limpo = validar_cpf(cpf)
@@ -64,24 +70,30 @@ class Voluntario(models.Model):
             defaults={
                 "nome_cifrado": cifrar(nome_limpo),
                 "cpf_cifrado": cifrar(cpf_limpo),
+                "email_cifrado": cifrar(email_limpo),
                 "autorizou_reuso_em": timezone.now() if autorizado_reuso else None,
                 "criado_por": usuario,
             },
         )
         autorizacao_atualizada = False
         nome_atualizado = False
+        email_atualizado = False
         campos_atualizados = []
         if not criado and voluntario.obter_nome() != nome_limpo:
             voluntario.nome_cifrado = cifrar(nome_limpo)
             campos_atualizados.append("nome_cifrado")
             nome_atualizado = True
+        if not criado and voluntario.obter_email() != email_limpo:
+            voluntario.email_cifrado = cifrar(email_limpo)
+            campos_atualizados.append("email_cifrado")
+            email_atualizado = True
         if not criado and autorizado_reuso and voluntario.autorizou_reuso_em is None:
             voluntario.autorizou_reuso_em = timezone.now()
             campos_atualizados.append("autorizou_reuso_em")
             autorizacao_atualizada = True
         if campos_atualizados:
             voluntario.save(update_fields=campos_atualizados)
-        return voluntario, criado, autorizacao_atualizada, nome_atualizado
+        return voluntario, criado, autorizacao_atualizada, nome_atualizado, email_atualizado
 
 
 class DadoColetado(models.Model):
@@ -164,3 +176,20 @@ class Participacao(models.Model):
 
     def __str__(self):
         return f"{self.voluntario.nome_publico} — {self.estudo.nome}"
+
+
+class AvaliacaoParticipacao(models.Model):
+    participacao = models.OneToOneField(Participacao, on_delete=models.CASCADE, related_name="avaliacao")
+    nota_estudo = models.PositiveSmallIntegerField(
+        "avaliação da pesquisa", validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+    nota_pesquisador = models.PositiveSmallIntegerField(
+        "avaliação do pesquisador", validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+    comentario = models.CharField("comentário para o pesquisador", max_length=1000, blank=True)
+    atualizado_em = models.DateTimeField("atualizado em", auto_now=True)
+
+    class Meta:
+        verbose_name = "avaliação da participação"
+        verbose_name_plural = "avaliações das participações"
+        ordering = ["-atualizado_em"]

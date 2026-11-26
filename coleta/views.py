@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Avg, Count
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 import logging
@@ -11,8 +11,13 @@ from autenticacao.models import EventoAuditoria, Usuario
 from autenticacao.permissoes import exige_perfil
 from estudos.models import Estudo
 
-from .forms import RegistroParticipacaoForm, ValoresColetaForm
-from .models import DadoColetado, Participacao, Voluntario
+from .forms import (
+    AcessoVoluntarioForm,
+    AvaliacaoVoluntarioForm,
+    RegistroParticipacaoForm,
+    ValoresColetaForm,
+)
+from .models import AvaliacaoParticipacao, DadoColetado, Participacao, Voluntario
 from .servicos import (
     avaliar_estudo,
     dados_reutilizaveis,
@@ -52,20 +57,23 @@ def registrar(request):
     if request.method == "POST" and form.is_valid():
         estudo = form.cleaned_data["estudo"]
         with transaction.atomic():
-            voluntario, novo, autorizacao_atualizada, nome_atualizado = Voluntario.registrar(
+            voluntario, novo, autorizacao_atualizada, nome_atualizado, email_atualizado = Voluntario.registrar(
                 form.cleaned_data["cpf"],
                 nome=form.cleaned_data["nome"],
+                email=form.cleaned_data["email"],
                 autorizado_reuso=form.cleaned_data["autorizado_reuso"],
                 usuario=request.user,
             )
             if novo:
                 registrar_evento(request.user, EventoAuditoria.Tipo.CRIACAO, voluntario)
-            elif autorizacao_atualizada or nome_atualizado:
+            elif autorizacao_atualizada or nome_atualizado or email_atualizado:
                 campos = []
                 if nome_atualizado:
                     campos.append("nome_cifrado")
                 if autorizacao_atualizada:
                     campos.append("autorizou_reuso_em")
+                if email_atualizado:
+                    campos.append("email_cifrado")
                 registrar_evento(
                     request.user,
                     EventoAuditoria.Tipo.ALTERACAO,
@@ -78,8 +86,14 @@ def registrar(request):
                 defaults={"profissional": request.user if request.user.e_profissional else None},
             )
             if not criada:
-                messages.info(request, "Esse voluntário já está registrado neste estudo.")
-                return redirect("coleta:participacao", id=participacao.pk)
+                if participacao.profissional_id == request.user.pk:
+                    messages.info(request, "Esse voluntário já está registrado neste estudo.")
+                    return redirect("coleta:participacao", id=participacao.pk)
+                messages.warning(
+                    request,
+                    "Esse voluntário já possui uma participação neste estudo. O sistema não criou um registro duplicado.",
+                )
+                return redirect("coleta:coleta")
 
             criterios = estudo.criterios.select_related("variavel").all()
             ids_variaveis = [criterio.variavel_id for criterio in criterios]
@@ -206,7 +220,7 @@ def lista_pendencias(request):
 @exige_perfil(Usuario.Perfil.PESQUISADOR)
 def painel_estudo(request, id):
     estudo = get_object_or_404(Estudo, pk=id, pesquisador=request.user)
-    participacoes = estudo.participacoes.select_related("voluntario").order_by("situacao", "-atualizado_em")
+    participacoes = estudo.participacoes.select_related("voluntario", "avaliacao").order_by("situacao", "-atualizado_em")
     totais = {
         "total": participacoes.count(),
         "pendentes": participacoes.filter(situacao=Participacao.Situacao.PENDENTE).count(),
@@ -247,28 +261,130 @@ def lista_voluntarios(request):
             participacoes__estudo__pesquisador=request.user
         ).distinct()
     else:
-        participacoes_visiveis = Participacao.objects.filter(profissional=request.user)
-        voluntarios = Voluntario.objects.filter(
-            Q(criado_por=request.user) | Q(participacoes__profissional=request.user)
-        ).distinct()
+        # Profissionais precisam localizar participantes registrados por outras
+        # contas e conferir a quais estudos eles estão vinculados.
+        participacoes_visiveis = Participacao.objects.all()
+        voluntarios = Voluntario.objects.all()
 
     registros = []
     for voluntario in voluntarios.order_by("-criado_em"):
         participacoes = list(
             participacoes_visiveis.filter(voluntario=voluntario)
-            .select_related("estudo")
+            .select_related("estudo", "profissional")
             .prefetch_related("dados_utilizados__variavel__dominio__opcoes")
             .order_by("-criado_em")
         )
         for participacao in participacoes:
-            participacao.dados_exibidos = [
-                {
-                    "variavel": dado.variavel.nome,
-                    "valor": formatar_dado_voluntario(dado),
-                    "coletado_em": dado.coletado_em,
-                }
-                for dado in participacao.dados_utilizados.all()
-            ]
-        registros.append({"voluntario": voluntario, "participacoes": participacoes})
+            participacao.pode_ver_dados = (
+                request.user.e_pesquisador or participacao.profissional_id == request.user.pk
+            )
+            participacao.dados_exibidos = (
+                [
+                    {
+                        "variavel": dado.variavel.nome,
+                        "valor": formatar_dado_voluntario(dado),
+                        "coletado_em": dado.coletado_em,
+                    }
+                    for dado in participacao.dados_utilizados.all()
+                ]
+                if participacao.pode_ver_dados
+                else []
+            )
+        registros.append({
+            "voluntario": voluntario,
+            "participacoes": participacoes,
+            "pode_ver_cadastro": request.user.e_pesquisador or voluntario.criado_por_id == request.user.pk,
+        })
 
     return render(request, "coleta/voluntarios.html", {"registros": registros, "total": len(registros)})
+
+
+def area_voluntario(request):
+    form = AcessoVoluntarioForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        from .seguranca import identificador_cpf
+
+        cpf_id = identificador_cpf(form.cleaned_data["cpf"])
+        voluntario = Voluntario.objects.filter(
+            identificador=cpf_id,
+            participacoes__estudo__situacao=Estudo.Situacao.ATIVO,
+        ).distinct().first()
+        if voluntario:
+            request.session.cycle_key()
+            request.session["voluntario_autenticado_id"] = voluntario.pk
+            request.session.set_expiry(30 * 60)
+            return redirect("coleta:perfil_voluntario")
+        form.add_error(None, "Não foi possível acessar. Confira o CPF ou fale com a equipe responsável pelo cadastro.")
+    return render(request, "coleta/area_voluntario.html", {"form": form})
+
+
+def perfil_voluntario(request):
+    voluntario_id = request.session.get("voluntario_autenticado_id")
+    voluntario = get_object_or_404(Voluntario, pk=voluntario_id) if voluntario_id else None
+    if not voluntario:
+        messages.info(request, "Acesse com seu CPF para consultar suas participações.")
+        return redirect("coleta:area_voluntario")
+    participacoes = list(
+        Participacao.objects.filter(voluntario=voluntario, estudo__situacao=Estudo.Situacao.ATIVO)
+        .select_related("estudo__pesquisador", "avaliacao")
+        .order_by("estudo__nome")
+    )
+    return render(request, "coleta/perfil_voluntario.html", {"voluntario": voluntario, "participacoes": participacoes})
+
+
+def avaliar_participacao_voluntario(request, id):
+    voluntario_id = request.session.get("voluntario_autenticado_id")
+    if not voluntario_id:
+        return redirect("coleta:area_voluntario")
+    participacao = get_object_or_404(
+        Participacao.objects.select_related("estudo"),
+        pk=id,
+        voluntario_id=voluntario_id,
+        estudo__situacao=Estudo.Situacao.ATIVO,
+    )
+    avaliacao_atual = AvaliacaoParticipacao.objects.filter(participacao=participacao).first()
+    form = AvaliacaoVoluntarioForm(request.POST or None, initial={
+        "nota_estudo": avaliacao_atual.nota_estudo if avaliacao_atual else None,
+        "nota_pesquisador": avaliacao_atual.nota_pesquisador if avaliacao_atual else None,
+        "comentario": avaliacao_atual.comentario if avaliacao_atual else "",
+    })
+    if request.method == "POST" and form.is_valid():
+        AvaliacaoParticipacao.objects.update_or_create(
+            participacao=participacao,
+            defaults={
+                "nota_estudo": form.cleaned_data["nota_estudo"],
+                "nota_pesquisador": form.cleaned_data["nota_pesquisador"],
+                "comentario": form.cleaned_data["comentario"].strip(),
+            },
+        )
+        messages.success(request, "Sua avaliação foi registrada. Obrigado pelo feedback!")
+        return redirect("coleta:perfil_voluntario")
+    return render(request, "coleta/avaliar_voluntario.html", {
+        "participacao": participacao,
+        "form": form,
+    })
+
+
+def sair_area_voluntario(request):
+    if request.method == "POST":
+        request.session.pop("voluntario_autenticado_id", None)
+        messages.success(request, "Você saiu da área do voluntário.")
+    return redirect("coleta:area_voluntario")
+
+
+@exige_perfil(Usuario.Perfil.PESQUISADOR)
+def avaliacoes_pesquisador(request):
+    avaliacoes = AvaliacaoParticipacao.objects.filter(
+        participacao__estudo__pesquisador=request.user,
+    ).select_related("participacao__estudo").order_by("-atualizado_em")
+    resumo = avaliacoes.aggregate(
+        media_pesquisador=Avg("nota_pesquisador"),
+        media_pesquisa=Avg("nota_estudo"),
+        total=Count("pk"),
+    )
+    return render(request, "coleta/avaliacoes_pesquisador.html", {
+        "avaliacoes": avaliacoes,
+        "media_pesquisador": round(resumo["media_pesquisador"] or 0, 1),
+        "media_pesquisa": round(resumo["media_pesquisa"] or 0, 1),
+        "total": resumo["total"],
+    })
