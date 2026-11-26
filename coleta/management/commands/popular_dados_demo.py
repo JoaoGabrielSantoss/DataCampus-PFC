@@ -18,25 +18,28 @@ TOTAL_VOLUNTARIOS = 5000
 MARCADOR = "DEMONSTRAÇÃO FICTÍCIA"
 
 CONDICOES = [
-    "Saúde cardiovascular", "Qualidade do sono", "Alimentação e bem-estar", "Atividade física",
-    "Saúde respiratória", "Atenção primária", "Saúde da pessoa idosa", "Saúde materna",
-    "Saúde mental e rotina", "Acesso a serviços de saúde", "Reabilitação funcional", "Hábitos de prevenção",
-    "Saúde ocupacional", "Mobilidade e qualidade de vida", "Educação em saúde", "Condições crônicas",
-    "Uso de serviços preventivos", "Bem-estar em comunidades", "Hábitos de hidratação", "Autocuidado",
+    "hipertensão arterial", "diabetes mellitus tipo 2", "obesidade", "asma", "doença pulmonar obstrutiva crônica",
+    "doença cardiovascular", "doença renal crônica", "osteoartrite", "osteoporose", "artrite reumatoide",
+    "enxaqueca", "depressão", "transtorno de ansiedade", "apneia do sono", "anemia ferropriva",
+    "doença de Parkinson", "doença de Alzheimer", "doença celíaca", "câncer de mama", "endometriose",
+    "hipotireoidismo", "doença hepática gordurosa", "doença vascular periférica", "insuficiência cardíaca",
+    "acidente vascular cerebral", "epilepsia", "fibromialgia", "lombalgia crônica", "rinite alérgica", "psoríase",
+    "dermatite atópica", "tuberculose", "hepatite C", "infecção pelo HIV", "esclerose múltipla", "glaucoma",
+    "catarata", "doença periodontal", "doença de Crohn", "colite ulcerativa", "síndrome dos ovários policísticos",
+    "menopausa", "pré-diabetes", "dislipidemia", "refluxo gastroesofágico", "doença pulmonar intersticial",
+    "insuficiência renal", "câncer colorretal", "leucemia", "doença falciforme",
 ]
-OBJETIVOS = [
-    "descrever padrões autorrelatados de saúde e bem-estar em diferentes grupos adultos",
-    "acompanhar indicadores gerais de qualidade de vida em participantes voluntários",
-    "explorar a relação entre hábitos cotidianos e indicadores de saúde autorrelatados",
-    "avaliar a experiência de participantes no acesso a ações de promoção da saúde",
-    "identificar necessidades de informação e prevenção relatadas pelos participantes",
-    "observar a evolução de indicadores não identificáveis ao longo do acompanhamento",
-]
-METODOS = [
-    "A coleta é observacional e realizada por profissionais autorizados, seguindo os critérios definidos no sistema.",
-    "O acompanhamento utiliza formulários estruturados e registros vinculados à participação no estudo.",
-    "A equipe registra somente as variáveis previstas no protocolo e acompanha a elegibilidade dos participantes.",
-    "O protocolo prevê coleta padronizada, revisão dos registros e acompanhamento periódico da participação.",
+FORMATOS_PESQUISA = [
+    "Estudo observacional de {condicao}",
+    "Perfil de saúde de pessoas com {condicao}",
+    "Qualidade de vida de pessoas com {condicao}",
+    "Hábitos de autocuidado em pessoas com {condicao}",
+    "Acompanhamento de participantes com {condicao}",
+    "Acesso aos serviços de saúde por pessoas com {condicao}",
+    "Indicadores de bem-estar relacionados a {condicao}",
+    "Rotina de cuidado de pessoas com {condicao}",
+    "Experiência dos participantes no cuidado de {condicao}",
+    "Fatores associados ao acompanhamento de {condicao}",
 ]
 PRIMEIROS_NOMES = [
     "Ana", "Bruno", "Camila", "Daniel", "Eduarda", "Felipe", "Gabriela", "Henrique", "Isabela", "João",
@@ -46,6 +49,33 @@ SOBRENOMES = [
     "Almeida", "Barbosa", "Cardoso", "Dias", "Esteves", "Ferreira", "Gomes", "Lima", "Martins", "Nogueira",
     "Oliveira", "Pereira", "Queiroz", "Ribeiro", "Santos", "Teixeira", "Vieira", "Xavier", "Araújo", "Costa",
 ]
+NOMES_DO_MEIO = [
+    "Beatriz", "Caio", "Davi", "Elisa", "Fernanda", "Gustavo", "Helena", "Igor", "Juliana", "Kaique",
+    "Laura", "Miguel", "Natália", "Otávio", "Patrícia", "Renato", "Sofia", "Thiago", "Valentina", "Wesley",
+]
+
+
+def dados_pesquisa(numero):
+    condicao = CONDICOES[(numero - 1) // len(FORMATOS_PESQUISA)]
+    formato = FORMATOS_PESQUISA[(numero - 1) % len(FORMATOS_PESQUISA)]
+    nome = formato.format(condicao=condicao)
+    descricao = (
+        f"Objetivo: descrever aspectos sociodemográficos, hábitos de saúde e experiência de acompanhamento "
+        f"de participantes adultos relacionados a {condicao}.\n\n"
+        "Delineamento: estudo observacional com coleta estruturada de informações autorrelatadas.\n\n"
+        "População de interesse: pessoas adultas com a condição estudada. A participação depende da análise "
+        "dos critérios de elegibilidade cadastrados pela equipe responsável.\n\n"
+        "Acompanhamento: registro das participações e revisão dos dados coletados pela equipe. As informações "
+        "devem ser analisadas de forma agregada e tratadas conforme as regras de privacidade do projeto."
+    )
+    return nome, condicao, descricao
+
+
+def nome_voluntario(numero, rng):
+    return " ".join((
+        rng.choice(PRIMEIROS_NOMES), rng.choice(NOMES_DO_MEIO),
+        rng.choice(SOBRENOMES), rng.choice(SOBRENOMES),
+    ))
 
 
 def cpf_valido(base):
@@ -90,21 +120,33 @@ class Command(BaseCommand):
             raise CommandError("O catálogo precisa conter a variável numérica idade_anos.") from erro
 
         agora = timezone.now()
-        nomes_estudos = [f"{MARCADOR} — Pesquisa {numero:03d}" for numero in range(1, TOTAL_ESTUDOS + 1)]
+        dados_estudos = [dados_pesquisa(numero) for numero in range(1, TOTAL_ESTUDOS + 1)]
+        nomes_estudos = [item[0] for item in dados_estudos]
+        nomes_antigos = [f"{MARCADOR} — Pesquisa {numero:03d}" for numero in range(1, TOTAL_ESTUDOS + 1)]
         existentes_estudos = {item.nome: item for item in Estudo.objects.filter(nome__in=nomes_estudos)}
+        estudos_antigos = {item.nome: item for item in Estudo.objects.filter(nome__in=nomes_antigos)}
         novos_estudos = []
-        for numero, nome in enumerate(nomes_estudos, start=1):
+        estudos_renomeados = []
+        estudos_atualizados = []
+        estudos_demo = []
+        for numero, (nome, condicao, descricao) in enumerate(dados_estudos, start=1):
             if nome in existentes_estudos:
+                estudo = existentes_estudos[nome]
+                if "Objetivo ilustrativo:" in estudo.descricao:
+                    estudo.condicao = condicao
+                    estudo.descricao = descricao
+                    estudos_atualizados.append(estudo)
+                estudos_demo.append(estudo)
                 continue
-            condicao = rng.choice(CONDICOES)
-            objetivo = rng.choice(OBJETIVOS)
-            descricao = (
-                f"{MARCADOR}. Este registro contém conteúdo sintético e não descreve pesquisa real.\n\n"
-                f"Objetivo: {objetivo}. O tema de referência é {condicao.lower()}.\n\n"
-                f"Procedimento: {rng.choice(METODOS)} Os dados servem somente para demonstração da navegação, "
-                "dos indicadores e dos filtros do DataCampus; não devem orientar decisões clínicas.\n\n"
-                "A participação é representada por registros fictícios, sem respostas clínicas ou dados de pessoas reais."
-            )
+            nome_antigo = nomes_antigos[numero - 1]
+            if nome_antigo in estudos_antigos:
+                estudo = estudos_antigos[nome_antigo]
+                estudo.nome = nome
+                estudo.condicao = condicao
+                estudo.descricao = descricao
+                estudos_renomeados.append(estudo)
+                estudos_demo.append(estudo)
+                continue
             situacao = rng.choices(
                 [Estudo.Situacao.ATIVO, Estudo.Situacao.RASCUNHO, Estudo.Situacao.ENCERRADO],
                 weights=[70, 20, 10], k=1,
@@ -119,8 +161,16 @@ class Command(BaseCommand):
                 pesquisador=rng.choice(pesquisadores),
                 criado_em=criacao,
             ))
+        nomes_voluntarios = {}
+        rng_nomes = random.Random(options["seed"] + 70_000)
+        nomes_usados = set()
+        for numero in range(1, TOTAL_VOLUNTARIOS + 1):
+            nome = nome_voluntario(numero, rng_nomes)
+            while nome in nomes_usados:
+                nome = nome_voluntario(numero, rng_nomes)
+            nomes_usados.add(nome)
+            nomes_voluntarios[numero] = nome
 
-        nomes_voluntarios = [f"{MARCADOR} — Voluntário {numero:05d}" for numero in range(1, TOTAL_VOLUNTARIOS + 1)]
         # CPFs válidos gerados por sequência determinística; nunca são dados de pessoas reais.
         cpf_por_numero = {numero: cpf_valido(100_000_000 + numero) for numero in range(1, TOTAL_VOLUNTARIOS + 1)}
         identificador_por_numero = {numero: identificador_cpf(cpf) for numero, cpf in cpf_por_numero.items()}
@@ -134,13 +184,18 @@ class Command(BaseCommand):
 
         novas_pesquisas = 0
         novos_voluntarios = 0
+        voluntarios_atualizados = 0
         novos_criterios = 0
         novas_participacoes = 0
 
         with transaction.atomic():
+            if estudos_renomeados:
+                Estudo.objects.bulk_update(estudos_renomeados, ["nome", "condicao", "descricao"], batch_size=250)
+            if estudos_atualizados:
+                Estudo.objects.bulk_update(estudos_atualizados, ["condicao", "descricao"], batch_size=250)
             if novos_estudos:
                 Estudo.objects.bulk_create(novos_estudos, batch_size=250)
-            estudos_demo = list(Estudo.objects.filter(nome__in=nomes_estudos).order_by("nome"))
+                estudos_demo.extend(novos_estudos)
             novas_pesquisas = len(novos_estudos)
 
             criterios_existentes = set(Criterio.objects.filter(
@@ -161,19 +216,23 @@ class Command(BaseCommand):
                 novos_criterios = len(criterios)
 
             voluntarios_novos = []
-            datas_criacao_voluntario = {}
+            voluntarios_para_atualizar = []
             for numero in range(1, TOTAL_VOLUNTARIOS + 1):
                 identificador = identificador_por_numero[numero]
-                if identificador in existentes_voluntarios:
+                voluntario_existente = existentes_voluntarios.get(identificador)
+                if voluntario_existente:
+                    # Só atualiza nomes de registros deste carregador, nunca os cadastros existentes de usuários.
+                    email_existente = voluntario_existente.obter_email()
+                    nome = nomes_voluntarios[numero]
+                    if email_existente.startswith("demo-voluntario-") and voluntario_existente.obter_nome() != nome:
+                        voluntario_existente.nome_cifrado = cifrar(nome)
+                        voluntarios_para_atualizar.append(voluntario_existente)
                     continue
                 cpf = cpf_por_numero[numero]
-                nome = f"{rng.choice(PRIMEIROS_NOMES)} {rng.choice(SOBRENOMES)} {rng.choice(SOBRENOMES)}"
-                # O marcador de demonstração deixa evidente que o cadastro é fictício.
-                nome = f"{MARCADOR} — {nome} {numero:05d}"
+                nome = nomes_voluntarios[numero]
                 email = f"demo-voluntario-{numero:05d}@example.invalid"
                 autorizou = rng.choice((True, False))
                 criado_em = agora - timedelta(days=rng.randint(0, 364), hours=rng.randint(0, 23))
-                datas_criacao_voluntario[identificador] = criado_em
                 voluntarios_novos.append(Voluntario(
                     identificador=identificador,
                     nome_cifrado=cifrar(nome),
@@ -185,6 +244,9 @@ class Command(BaseCommand):
             for lote in lotes(voluntarios_novos, 250):
                 Voluntario.objects.bulk_create(lote, batch_size=250)
             novos_voluntarios = len(voluntarios_novos)
+            for lote in lotes(voluntarios_para_atualizar, 250):
+                Voluntario.objects.bulk_update(lote, ["nome_cifrado"], batch_size=250)
+            voluntarios_atualizados = len(voluntarios_para_atualizar)
 
             if not options["sem_participacoes"]:
                 ativos = [item for item in estudos_demo if item.situacao == Estudo.Situacao.ATIVO]
@@ -224,4 +286,8 @@ class Command(BaseCommand):
             f"{novas_pesquisas} pesquisas, {novos_criterios} critérios, "
             f"{novos_voluntarios} voluntários e {novas_participacoes} participações inseridos."
         ))
-        self.stdout.write("Dados de demonstração identificados, sem e-mails reais e sem respostas clínicas inventadas.")
+        self.stdout.write(
+            f"Pesquisas renomeadas: {len(estudos_renomeados)}; descrições atualizadas: {len(estudos_atualizados)}. "
+            f"Nomes de voluntários atualizados: {voluntarios_atualizados}. "
+            "A base permanece sintética; e-mails de exemplo não recebem mensagens."
+        )

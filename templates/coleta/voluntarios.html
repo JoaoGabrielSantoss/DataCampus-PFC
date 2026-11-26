@@ -12,9 +12,11 @@
 <div class="painel-indicadores">
   <div class="painel-indicador">
     <span class="painel-numero">{{ total }}</span>
-    <span class="painel-legenda">Voluntário{{ total|pluralize }} cadastrado{{ total|pluralize }}</span>
+    <span class="painel-legenda">Voluntário{{ total|pluralize }} no total</span>
   </div>
 </div>
+
+<p class="voluntarios-aviso">Exibindo {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ total }} cadastros, do mais recente ao mais antigo.</p>
 
 <p class="voluntarios-aviso">O CPF fica parcialmente oculto. Profissionais podem consultar os vínculos dos voluntários com as pesquisas; as respostas detalhadas só aparecem para quem tem acesso àquela coleta.</p>
 
@@ -69,4 +71,12 @@
   <p class="painel-vazio">Não há voluntários disponíveis para exibir neste perfil.</p>
 {% endfor %}
 </div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="voluntarios-paginacao" aria-label="Navegação entre páginas de voluntários">
+  {% if page_obj.has_previous %}<a class="botao botao-secundario" href="?page={{ page_obj.previous_page_number }}">← Mais recentes</a>{% endif %}
+  <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="botao botao-secundario" href="?page={{ page_obj.next_page_number }}">Mais antigos →</a>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}

@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.core.paginator import Paginator
+from django.db.models import Avg, Count, Prefetch
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 import logging
@@ -266,37 +267,60 @@ def lista_voluntarios(request):
         participacoes_visiveis = Participacao.objects.all()
         voluntarios = Voluntario.objects.all()
 
-    registros = []
-    for voluntario in voluntarios.order_by("-criado_em"):
-        participacoes = list(
-            participacoes_visiveis.filter(voluntario=voluntario)
-            .select_related("estudo", "profissional")
-            .prefetch_related("dados_utilizados__variavel__dominio__opcoes")
-            .order_by("-criado_em")
-        )
-        for participacao in participacoes:
-            participacao.pode_ver_dados = (
-                request.user.e_pesquisador or participacao.profissional_id == request.user.pk
-            )
-            participacao.dados_exibidos = (
-                [
-                    {
-                        "variavel": dado.variavel.nome,
-                        "valor": formatar_dado_voluntario(dado),
-                        "coletado_em": dado.coletado_em,
-                    }
-                    for dado in participacao.dados_utilizados.all()
-                ]
-                if participacao.pode_ver_dados
-                else []
-            )
-        registros.append({
-            "voluntario": voluntario,
-            "participacoes": participacoes,
-            "pode_ver_cadastro": request.user.e_pesquisador or voluntario.criado_por_id == request.user.pk,
-        })
+    total = voluntarios.count()
+    page_obj = Paginator(voluntarios.order_by("-criado_em", "-pk"), 20).get_page(request.GET.get("page"))
+    voluntarios_pagina = list(page_obj.object_list)
+    ids_pagina = [voluntario.pk for voluntario in voluntarios_pagina]
 
-    return render(request, "coleta/voluntarios.html", {"registros": registros, "total": len(registros)})
+    participacoes_query = participacoes_visiveis.filter(voluntario_id__in=ids_pagina).select_related(
+        "estudo", "profissional"
+    )
+    if request.user.e_pesquisador:
+        participacoes_query = participacoes_query.prefetch_related("dados_utilizados__variavel__dominio__opcoes")
+    else:
+        dados_autorizados = DadoColetado.objects.filter(
+            participacoes__profissional=request.user,
+        ).select_related("variavel__dominio").prefetch_related("variavel__dominio__opcoes").distinct()
+        participacoes_query = participacoes_query.prefetch_related(
+            Prefetch("dados_utilizados", queryset=dados_autorizados, to_attr="dados_permitidos")
+        )
+
+    por_voluntario = {}
+    for participacao in participacoes_query.order_by("-criado_em", "-pk"):
+        participacao.pode_ver_dados = (
+            request.user.e_pesquisador or participacao.profissional_id == request.user.pk
+        )
+        dados = getattr(participacao, "dados_permitidos", None)
+        if dados is None:
+            dados = participacao.dados_utilizados.all()
+        participacao.dados_exibidos = (
+            [
+                {
+                    "variavel": dado.variavel.nome,
+                    "valor": formatar_dado_voluntario(dado),
+                    "coletado_em": dado.coletado_em,
+                }
+                for dado in dados
+            ]
+            if participacao.pode_ver_dados
+            else []
+        )
+        por_voluntario.setdefault(participacao.voluntario_id, []).append(participacao)
+
+    registros = [
+        {
+            "voluntario": voluntario,
+            "participacoes": por_voluntario.get(voluntario.pk, []),
+            "pode_ver_cadastro": request.user.e_pesquisador or voluntario.criado_por_id == request.user.pk,
+        }
+        for voluntario in voluntarios_pagina
+    ]
+
+    return render(request, "coleta/voluntarios.html", {
+        "registros": registros,
+        "total": total,
+        "page_obj": page_obj,
+    })
 
 
 def area_voluntario(request):

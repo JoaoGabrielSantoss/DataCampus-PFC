@@ -9,8 +9,9 @@
             <h1 class="painel-titulo">Olá, {{ user.nome_completo }}</h1>
             <p class="dashboard-descricao">
                 {% if is_pesquisador %}Visão geral dos estudos sob sua responsabilidade.{% else %}Acompanhe as coletas que você realizou.{% endif %}
-                Os gráficos mostram apenas dados agregados de participação e elegibilidade.
+                Os gráficos mostram dados agregados; os rankings são gerais para todo o sistema.
             </p>
+            <p class="dashboard-aviso-base">Esta base inclui registros sintéticos para demonstração; nomes e dados não correspondem a pessoas ou pesquisas reais.</p>
         </div>
         <form class="dashboard-filtros" method="get" aria-label="Filtros do painel">
             <label>Período
@@ -38,6 +39,7 @@
         <article class="dashboard-indicador"><span>Pesquisas atendidas</span><strong>{{ total_estudos }}</strong><small>Com coletas atribuídas a você</small></article>
         {% endif %}
         <article class="dashboard-indicador"><span>Pendentes</span><strong>{{ pendentes }}</strong><small>Aguardam respostas de critérios</small></article>
+        <article class="dashboard-indicador"><span>Pesquisas no sistema</span><strong>{{ total_pesquisas_sistema }}</strong><small>Total geral, todos os pesquisadores</small></article>
     </div>
 
     <div class="dashboard-graficos">
@@ -53,6 +55,18 @@
         <article class="dashboard-card dashboard-card-amplo">
             <div class="dashboard-card-titulo"><div><h2>Pesquisas com mais participações</h2><p>Clique em uma barra para ver uma pesquisa específica</p></div></div>
             <div id="grafico-estudos" class="grafico-barras"></div>
+        </article>
+        <article class="dashboard-card dashboard-card-amplo dashboard-ranking-global">
+            <div class="dashboard-card-titulo"><div><h2>Ranking geral de pesquisas</h2><p>Ordenado pelo número de voluntários vinculados, em todo o sistema</p></div><span class="dashboard-unidade">Top 10</span></div>
+            {% if ranking_pesquisas %}
+            <ol class="dashboard-ranking-lista">{% for estudo in ranking_pesquisas %}<li><span class="ranking-posicao">{{ forloop.counter }}</span><span class="ranking-nome">{{ estudo.nome }}</span><strong class="ranking-valor">{{ estudo.voluntarios_total }} <small>voluntários</small></strong></li>{% endfor %}</ol>
+            {% else %}<div class="dashboard-vazio">Ainda não há pesquisas cadastradas.</div>{% endif %}
+        </article>
+        <article class="dashboard-card dashboard-card-amplo dashboard-ranking-global">
+            <div class="dashboard-card-titulo"><div><h2>Melhor avaliação média</h2><p>Pesquisas avaliadas pelos voluntários; a média vai de 0 a 5 estrelas</p></div><span class="dashboard-unidade">Top 10</span></div>
+            {% if ranking_avaliacoes %}
+            <ol class="dashboard-ranking-lista">{% for estudo in ranking_avaliacoes %}<li><span class="ranking-posicao">{{ forloop.counter }}</span><span class="ranking-nome">{{ estudo.nome }}</span><strong class="ranking-valor">★ {{ estudo.media_avaliacao|floatformat:1 }} <small>({{ estudo.total_avaliacoes }} avaliações)</small></strong></li>{% endfor %}</ol>
+            {% else %}<div class="dashboard-vazio">Ainda não há avaliações de pesquisas para montar o ranking.</div>{% endif %}
         </article>
         <article class="dashboard-card dashboard-card-acoes">
             <div class="dashboard-card-titulo"><div><h2>Atalhos</h2><p>Acesse as tarefas mais usadas</p></div></div>

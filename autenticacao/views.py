@@ -4,7 +4,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from datetime import timedelta
-from django.db.models import Count
+from django.db.models import Avg, Count
 from django.db.models.functions import TruncMonth
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -58,6 +58,20 @@ def inicio(request):
     else:
         estudos = Estudo.objects.filter(participacoes__profissional=request.user).distinct()
         participacoes = Participacao.objects.filter(profissional=request.user)
+
+    total_pesquisas_sistema = Estudo.objects.count()
+    ranking_pesquisas = list(
+        Estudo.objects.annotate(voluntarios_total=Count("participacoes__voluntario", distinct=True))
+        .order_by("-voluntarios_total", "nome")[:10]
+    )
+    ranking_avaliacoes = list(
+        Estudo.objects.annotate(
+            media_avaliacao=Avg("participacoes__avaliacao__nota_estudo"),
+            total_avaliacoes=Count("participacoes__avaliacao", distinct=True),
+        )
+        .filter(total_avaliacoes__gt=0)
+        .order_by("-media_avaliacao", "-total_avaliacoes", "nome")[:10]
+    )
 
     estudo_selecionado = request.GET.get("estudo", "")
     if estudo_selecionado:
@@ -123,6 +137,7 @@ def inicio(request):
         "situacao_selecionada": situacao,
         "situacoes": Participacao.Situacao.choices,
         "total_estudos": total_estudos,
+        "total_pesquisas_sistema": total_pesquisas_sistema,
         "estudos_ativos": estudos_ativos,
         "total_participacoes": total_participacoes,
         "total_voluntarios": total_voluntarios,
@@ -130,6 +145,8 @@ def inicio(request):
         "elegiveis": participacoes.filter(situacao=Participacao.Situacao.ELEGIVEL).count(),
         "inelegiveis": participacoes.filter(situacao=Participacao.Situacao.INELEGIVEL).count(),
         "recentes": recentes,
+        "ranking_pesquisas": ranking_pesquisas,
+        "ranking_avaliacoes": ranking_avaliacoes,
         "chart_data": chart_data,
     })
 
