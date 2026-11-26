@@ -214,8 +214,13 @@ def lista_pendencias(request):
         profissional=request.user,
         situacao=Participacao.Situacao.PENDENTE,
         estudo__situacao=Estudo.Situacao.ATIVO,
-    ).select_related("estudo", "voluntario")
-    return render(request, "coleta/pendencias.html", {"participacoes": participacoes})
+    ).select_related("estudo", "voluntario").order_by("-atualizado_em", "-pk")
+    page_obj = Paginator(participacoes, 20).get_page(request.GET.get("page"))
+    return render(request, "coleta/pendencias.html", {
+        "participacoes": page_obj.object_list,
+        "page_obj": page_obj,
+        "total": page_obj.paginator.count,
+    })
 
 
 @exige_perfil(Usuario.Perfil.PESQUISADOR)

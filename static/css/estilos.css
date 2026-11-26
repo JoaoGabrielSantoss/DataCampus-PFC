@@ -2317,6 +2317,9 @@ body:not(.painel) {
 .voluntarios-paginacao { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1.5rem 0; color: var(--tinta-suave); font-size: .9rem; }
 .voluntarios-paginacao .botao { padding: .7rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: #fff; color: var(--vinho); font-weight: 700; }
 .voluntarios-paginacao .botao:hover { border-color: var(--salmao); background: var(--salmao-muito-claro); }
+.lista-paginacao { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1.5rem 0; color: var(--tinta-suave); font-size: .9rem; }
+.lista-paginacao a { padding: .7rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: #fff; color: var(--vinho); font-weight: 700; }
+.lista-paginacao a:hover { border-color: var(--salmao); background: var(--salmao-muito-claro); }
 
 @media (max-width: 1000px) {
     .dashboard-cabecalho { align-items: stretch; flex-direction: column; gap: 1rem; }
